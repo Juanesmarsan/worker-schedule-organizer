@@ -1,28 +1,65 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { spainNationalHolidays2024, valenciaHolidays2024 } from "@/utils/holidayUtils";
 
 interface HolidaysListProps {
   holidays: Date[];
 }
 
 export const HolidaysList = ({ holidays }: HolidaysListProps) => {
+  const today = new Date();
   const upcomingHolidays = holidays
-    .filter(holiday => holiday > new Date())
-    .slice(0, 3);
+    .filter(holiday => holiday >= today)
+    .slice(0, 5)
+    .map(holiday => {
+      const isNational = spainNationalHolidays2024.some(nh => 
+        nh.toDateString() === holiday.toDateString()
+      );
+      const isValencia = valenciaHolidays2024.some(vh => 
+        vh.toDateString() === holiday.toDateString()
+      );
+      
+      return {
+        date: holiday,
+        isNational,
+        isValencia
+      };
+    });
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Próximos Festivos</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-3">
         {upcomingHolidays.map((holiday, index) => (
-          <div key={index} className="flex justify-between text-sm">
-            <span>{holiday.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</span>
-            <Badge variant="outline" className="text-xs">Festivo</Badge>
+          <div key={index} className="flex flex-col space-y-1">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">
+                {holiday.date.toLocaleDateString('es-ES', { 
+                  day: 'numeric', 
+                  month: 'long' 
+                })}
+              </span>
+              <div className="flex gap-1">
+                {holiday.isNational && (
+                  <Badge variant="destructive" className="text-xs">
+                    Nacional
+                  </Badge>
+                )}
+                {holiday.isValencia && (
+                  <Badge variant="outline" className="text-xs border-orange-300 text-orange-700">
+                    Valencia
+                  </Badge>
+                )}
+              </div>
+            </div>
           </div>
         ))}
+        {upcomingHolidays.length === 0 && (
+          <p className="text-sm text-gray-500">No hay festivos próximos</p>
+        )}
       </CardContent>
     </Card>
   );
