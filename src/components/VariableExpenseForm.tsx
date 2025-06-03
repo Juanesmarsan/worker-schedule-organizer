@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Project, VariableExpense } from "@/types/project";
+import { Upload, CreditCard } from "lucide-react";
 
 interface VariableExpenseFormProps {
   isOpen: boolean;
@@ -22,8 +23,12 @@ const VariableExpenseForm = ({ isOpen, onClose, projects, onAddExpense }: Variab
     concept: "",
     amount: "",
     date: new Date().toISOString().split('T')[0],
-    note: ""
+    note: "",
+    paymentMethod: "transferencia" as "transferencia" | "efectivo" | "tarjeta",
+    creditCardNumber: ""
   });
+
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
 
   const { toast } = useToast();
 
@@ -33,13 +38,22 @@ const VariableExpenseForm = ({ isOpen, onClose, projects, onAddExpense }: Variab
       concept: "",
       amount: "",
       date: new Date().toISOString().split('T')[0],
-      note: ""
+      note: "",
+      paymentMethod: "transferencia",
+      creditCardNumber: ""
     });
+    setReceiptFile(null);
   };
 
   const handleClose = () => {
     resetForm();
     onClose();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setReceiptFile(e.target.files[0]);
+    }
   };
 
   const handleSubmit = () => {
@@ -62,11 +76,23 @@ const VariableExpenseForm = ({ isOpen, onClose, projects, onAddExpense }: Variab
       return;
     }
 
+    if (formData.paymentMethod === "tarjeta" && !formData.creditCardNumber.trim()) {
+      toast({
+        title: "Error",
+        description: "Por favor introduce el número de tarjeta de crédito",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const expense: Omit<VariableExpense, 'id'> = {
       concept: formData.concept.trim(),
       amount: amount,
       date: new Date(formData.date),
-      note: formData.note.trim() || undefined
+      note: formData.note.trim() || undefined,
+      receipt: receiptFile || undefined,
+      paymentMethod: formData.paymentMethod,
+      creditCardNumber: formData.paymentMethod === "tarjeta" ? formData.creditCardNumber.trim() : undefined
     };
 
     onAddExpense(parseInt(formData.projectId), expense);
@@ -82,7 +108,7 @@ const VariableExpenseForm = ({ isOpen, onClose, projects, onAddExpense }: Variab
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[625px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Agregar Gasto Variable</DialogTitle>
           <DialogDescription>
@@ -138,6 +164,63 @@ const VariableExpenseForm = ({ isOpen, onClose, projects, onAddExpense }: Variab
                 onChange={(e) => setFormData({...formData, date: e.target.value})}
               />
             </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="payment-method">Método de Pago *</Label>
+            <Select value={formData.paymentMethod} onValueChange={(value: "transferencia" | "efectivo" | "tarjeta") => setFormData({...formData, paymentMethod: value})}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona el método de pago" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="transferencia">Transferencia</SelectItem>
+                <SelectItem value="efectivo">Efectivo</SelectItem>
+                <SelectItem value="tarjeta">Tarjeta de Crédito</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {formData.paymentMethod === "tarjeta" && (
+            <div className="grid gap-2">
+              <Label htmlFor="credit-card">Número de Tarjeta de Crédito *</Label>
+              <div className="relative">
+                <CreditCard className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="credit-card"
+                  placeholder="**** **** **** 1234"
+                  value={formData.creditCardNumber}
+                  onChange={(e) => setFormData({...formData, creditCardNumber: e.target.value})}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="grid gap-2">
+            <Label htmlFor="receipt">Factura/Ticket</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="receipt"
+                type="file"
+                accept="image/*,.pdf"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => document.getElementById('receipt')?.click()}
+                className="w-full"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {receiptFile ? receiptFile.name : "Subir Factura/Ticket"}
+              </Button>
+            </div>
+            {receiptFile && (
+              <p className="text-sm text-muted-foreground">
+                Archivo seleccionado: {receiptFile.name}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-2">

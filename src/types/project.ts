@@ -1,10 +1,12 @@
-
 export interface VariableExpense {
   id: number;
   concept: string;
   amount: number;
   date: Date;
   note?: string;
+  receipt?: File;
+  paymentMethod: "transferencia" | "efectivo" | "tarjeta";
+  creditCardNumber?: string;
 }
 
 export interface Project {

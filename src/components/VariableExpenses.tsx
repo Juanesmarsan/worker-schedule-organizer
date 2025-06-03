@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, FileText, CreditCard, Banknote, Wallet } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -24,8 +25,22 @@ const VariableExpenses = () => {
         status: "activo",
         createdAt: new Date(),
         variableExpenses: [
-          { id: 1, concept: "Material eléctrico", amount: 450, date: new Date(), note: "Cables y enchufes para renovación" },
-          { id: 2, concept: "Pintura", amount: 220, date: new Date() }
+          { 
+            id: 1, 
+            concept: "Material eléctrico", 
+            amount: 450, 
+            date: new Date(), 
+            note: "Cables y enchufes para renovación",
+            paymentMethod: "tarjeta",
+            creditCardNumber: "**** **** **** 1234"
+          },
+          { 
+            id: 2, 
+            concept: "Pintura", 
+            amount: 220, 
+            date: new Date(),
+            paymentMethod: "transferencia"
+          }
         ]
       },
       {
@@ -36,8 +51,21 @@ const VariableExpenses = () => {
         status: "activo",
         createdAt: new Date(),
         variableExpenses: [
-          { id: 3, concept: "Licencias software", amount: 150, date: new Date(), note: "Renovación anual Office 365" },
-          { id: 4, concept: "Repuestos hardware", amount: 80, date: new Date() }
+          { 
+            id: 3, 
+            concept: "Licencias software", 
+            amount: 150, 
+            date: new Date(), 
+            note: "Renovación anual Office 365",
+            paymentMethod: "efectivo"
+          },
+          { 
+            id: 4, 
+            concept: "Repuestos hardware", 
+            amount: 80, 
+            date: new Date(),
+            paymentMethod: "transferencia"
+          }
         ]
       }
     ];
@@ -78,6 +106,32 @@ const VariableExpenses = () => {
     setAllVariableExpenses(expenses);
   };
 
+  const getPaymentMethodIcon = (method: string) => {
+    switch (method) {
+      case "tarjeta":
+        return <CreditCard className="w-4 h-4" />;
+      case "efectivo":
+        return <Banknote className="w-4 h-4" />;
+      case "transferencia":
+        return <Wallet className="w-4 h-4" />;
+      default:
+        return null;
+    }
+  };
+
+  const getPaymentMethodText = (method: string) => {
+    switch (method) {
+      case "tarjeta":
+        return "Tarjeta";
+      case "efectivo":
+        return "Efectivo";
+      case "transferencia":
+        return "Transferencia";
+      default:
+        return method;
+    }
+  };
+
   const totalVariableExpenses = allVariableExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   return (
@@ -102,6 +156,8 @@ const VariableExpenses = () => {
                 <TableHead>Proyecto</TableHead>
                 <TableHead>Concepto</TableHead>
                 <TableHead>Fecha</TableHead>
+                <TableHead>Método de Pago</TableHead>
+                <TableHead>Factura</TableHead>
                 <TableHead>Nota</TableHead>
                 <TableHead className="text-right">Importe</TableHead>
               </TableRow>
@@ -114,6 +170,25 @@ const VariableExpenses = () => {
                   </TableCell>
                   <TableCell className="font-medium">{expense.concept}</TableCell>
                   <TableCell>{expense.date.toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {getPaymentMethodIcon(expense.paymentMethod)}
+                      <span className="text-sm">{getPaymentMethodText(expense.paymentMethod)}</span>
+                      {expense.paymentMethod === "tarjeta" && expense.creditCardNumber && (
+                        <span className="text-xs text-muted-foreground">({expense.creditCardNumber})</span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {expense.receipt ? (
+                      <div className="flex items-center gap-1">
+                        <FileText className="w-4 h-4 text-green-600" />
+                        <span className="text-sm text-green-600">Adjunto</span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground italic">Sin archivo</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {expense.note ? (
                       <span className="text-sm text-muted-foreground">{expense.note}</span>
@@ -192,8 +267,12 @@ const VariableExpenses = () => {
                   {project.variableExpenses.length > 0 && (
                     <div className="space-y-1">
                       {project.variableExpenses.map((expense) => (
-                        <div key={expense.id} className="flex justify-between text-sm">
-                          <span>{expense.concept}</span>
+                        <div key={expense.id} className="flex justify-between items-center text-sm">
+                          <div className="flex items-center gap-2">
+                            <span>{expense.concept}</span>
+                            {getPaymentMethodIcon(expense.paymentMethod)}
+                            {expense.receipt && <FileText className="w-3 h-3 text-green-600" />}
+                          </div>
                           <span>{expense.amount.toFixed(2)} €</span>
                         </div>
                       ))}
