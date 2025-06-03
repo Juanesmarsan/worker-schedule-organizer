@@ -2,14 +2,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Clock, CheckCircle, AlertCircle } from "lucide-react";
-import { MonthlyStats } from "@/types/calendar";
+import type { MonthlyStats as MonthlyStatsType } from "@/types/calendar";
 
-interface MonthlyStatsProps {
-  stats: MonthlyStats & { grossProfit?: number };
+interface MonthlyStatsComponentProps {
+  stats: MonthlyStatsType;
   currentMonth: Date;
 }
 
-export const MonthlyStats = ({ stats, currentMonth }: MonthlyStatsProps) => {
+export const MonthlyStats = ({ stats, currentMonth }: MonthlyStatsComponentProps) => {
   const completionPercentage = (stats.totalHours / stats.expectedHours) * 100;
   
   const getStatusBadge = () => {

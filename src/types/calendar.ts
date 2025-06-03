@@ -5,6 +5,7 @@ export interface MonthlyStats {
   totalHours: number;
   overtime: number;
   laboralHours: number;
+  grossProfit?: number;
 }
 
 export interface Absence {
@@ -15,6 +16,8 @@ export interface Absence {
   endDate: string;
   status: 'pending' | 'approved' | 'rejected';
   description?: string;
+  days: number;
+  reason: string;
 }
 
 export interface WorkEvent {
@@ -25,4 +28,27 @@ export interface WorkEvent {
   type: 'work' | 'meeting' | 'training' | 'other';
   description?: string;
   employeeName?: string;
+}
+
+export type EventType = 'vacation' | 'absence' | 'work_hours' | 'note';
+
+export interface EventFormData {
+  type: EventType;
+  date: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  hours: number;
+  notes: string;
+}
+
+export interface CalendarEvent {
+  id: number;
+  title: string;
+  type: EventType;
+  notes?: string;
+  employee?: string;
+  start: Date;
+  end: Date;
+  hours?: number;
 }

@@ -9,10 +9,43 @@ import ProjectsManager from "@/components/ProjectsManager";
 import PayrollManager from "@/components/PayrollManager";
 import VariableExpenses from "@/components/VariableExpenses";
 import FixedExpenses from "@/components/FixedExpenses";
+import DashboardWithData from "@/components/DashboardWithData";
 import { Absence } from "@/types/calendar";
+import { Project } from "@/types/project";
 
 const Index = () => {
-  // Estado compartido para las ausencias
+  const [projects, setProjects] = useState<Project[]>([
+    {
+      id: 1,
+      name: "Reforma Oficina Central",
+      type: "presupuesto",
+      budget: 15000,
+      description: "Renovación completa de la oficina central",
+      city: "Madrid",
+      status: "activo",
+      createdAt: new Date(),
+      variableExpenses: [
+        { id: 1, concept: "Material eléctrico", amount: 450, date: new Date(), paymentMethod: "transferencia" },
+        { id: 2, concept: "Pintura", amount: 220, date: new Date(), paymentMethod: "efectivo" }
+      ],
+      workers: []
+    },
+    {
+      id: 2,
+      name: "Mantenimiento Sistemas",
+      type: "administracion",
+      hourlyRate: 50,
+      description: "Mantenimiento mensual de sistemas informáticos",
+      city: "Barcelona",
+      status: "activo",
+      createdAt: new Date(),
+      variableExpenses: [
+        { id: 3, concept: "Licencias software", amount: 150, date: new Date(), paymentMethod: "tarjeta", creditCardNumber: "**** **** **** 1234" }
+      ],
+      workers: []
+    }
+  ]);
+
   const [absences, setAbsences] = useState<Absence[]>([
     {
       id: 1,
@@ -58,8 +91,9 @@ const Index = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="calendar" className="w-full">
-          <TabsList className="grid w-full grid-cols-8">
+        <Tabs defaultValue="dashboard" className="w-full">
+          <TabsList className="grid w-full grid-cols-9">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="calendar">Calendario</TabsTrigger>
             <TabsTrigger value="absences">Ausencias</TabsTrigger>
             <TabsTrigger value="hours">Horas</TabsTrigger>
@@ -69,6 +103,10 @@ const Index = () => {
             <TabsTrigger value="variable-expenses">Gastos Variables</TabsTrigger>
             <TabsTrigger value="fixed-expenses">Gastos Fijos</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="dashboard" className="mt-6">
+            <DashboardWithData projects={projects} absences={absences} />
+          </TabsContent>
 
           <TabsContent value="calendar" className="mt-6">
             <WorkCalendar 
