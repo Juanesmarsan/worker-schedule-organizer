@@ -21,32 +21,12 @@ const ProjectTimeline = ({ projectName, timelineSteps, onUpdateStep, onAddStep }
     return timelineSteps.length > 0 ? (completedSteps / timelineSteps.length) * 100 : 0;
   };
 
-  // Array de colores para los pasos
-  const stepColors = [
-    'bg-blue-500',
-    'bg-green-500', 
-    'bg-purple-500',
-    'bg-orange-500',
-    'bg-pink-500',
-    'bg-indigo-500',
-    'bg-teal-500',
-    'bg-red-500',
-    'bg-yellow-500',
-    'bg-cyan-500',
-    'bg-emerald-500',
-    'bg-violet-500'
-  ];
-
-  const getStepColor = (index: number) => {
-    return stepColors[index % stepColors.length];
-  };
-
-  const getStepStatusColor = (status: TimelineStep['status'], baseColor: string) => {
+  const getStepStatusColor = (status: TimelineStep['status']) => {
     switch (status) {
       case 'completed':
-        return baseColor; // Color completo
+        return 'bg-green-500'; // Verde para completado
       case 'in-progress':
-        return baseColor.replace('500', '400'); // Color más claro
+        return 'bg-blue-500'; // Azul para en progreso
       case 'pending':
         return 'bg-gray-300'; // Gris para pendiente
       default:
@@ -108,8 +88,7 @@ const ProjectTimeline = ({ projectName, timelineSteps, onUpdateStep, onAddStep }
             {!isExpanded && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                 {timelineSteps.map((step, index) => {
-                  const baseColor = getStepColor(index);
-                  const statusColor = getStepStatusColor(step.status, baseColor);
+                  const statusColor = getStepStatusColor(step.status);
                   
                   return (
                     <div key={step.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
@@ -127,12 +106,12 @@ const ProjectTimeline = ({ projectName, timelineSteps, onUpdateStep, onAddStep }
               <div className="space-y-4">
                 {timelineSteps.map((step, index) => (
                   <div key={step.id} className="relative">
-                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${getStepColor(index)} rounded`} />
+                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${getStepStatusColor(step.status)} rounded`} />
                     <div className="ml-4">
                       <EditableTimelineStep
                         step={step}
                         onUpdate={onUpdateStep}
-                        stepColor={getStepColor(index)}
+                        stepColor={getStepStatusColor(step.status)}
                       />
                     </div>
                   </div>

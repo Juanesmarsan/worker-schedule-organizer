@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,9 +33,9 @@ const EditableTimelineStep = ({ step, onUpdate, stepColor = 'bg-blue-500' }: Edi
   const getStatusBadge = (status: TimelineStep['status']) => {
     switch (status) {
       case 'completed':
-        return <Badge className={`${stepColor} text-white`}>Completado</Badge>;
+        return <Badge className="bg-green-500 text-white">Completado</Badge>;
       case 'in-progress':
-        return <Badge className={`${stepColor.replace('500', '400')} text-white`}>En Progreso</Badge>;
+        return <Badge className="bg-blue-500 text-white">En Progreso</Badge>;
       case 'pending':
         return <Badge variant="secondary">Pendiente</Badge>;
     }
