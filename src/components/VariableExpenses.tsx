@@ -24,6 +24,7 @@ const VariableExpenses = () => {
         description: "Renovación completa de la oficina central",
         status: "activo",
         createdAt: new Date(),
+        workers: [],
         variableExpenses: [
           { 
             id: 1, 
@@ -50,6 +51,7 @@ const VariableExpenses = () => {
         description: "Mantenimiento mensual de sistemas informáticos",
         status: "activo",
         createdAt: new Date(),
+        workers: [],
         variableExpenses: [
           { 
             id: 3, 

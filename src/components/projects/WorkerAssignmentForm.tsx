@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -181,11 +180,6 @@ const WorkerAssignmentForm = ({ isOpen, onClose, onSave, editingWorker, projectT
                   {availableWorkers.map((worker) => (
                     <SelectItem key={worker.id} value={worker.id.toString()}>
                       {worker.name}
-                      {worker.defaultHourlyRate && (
-                        <span className="text-muted-foreground ml-2">
-                          ({worker.defaultHourlyRate}€/h)
-                        </span>
-                      )}
                     </SelectItem>
                   ))}
                 </SelectContent>
