@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,9 +73,6 @@ export const DayCell = ({ date, employee, workHours, onHoursChange }: DayCellPro
               </Button>
             )}
           </div>
-        </div>
-        <div className="text-center">
-          <span className="text-red-800 text-xs font-bold">FESTIVO</span>
         </div>
       </div>
     );
