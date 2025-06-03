@@ -32,9 +32,9 @@ export const DayCell = ({ date, employee, workHours, onHoursChange }: DayCellPro
 
   if (isHolidayDate) {
     return (
-      <div className="w-full h-24 bg-red-100 border border-red-200 rounded p-1 flex flex-col items-center justify-center">
-        <span className="text-red-700 text-xs font-medium">FESTIVO</span>
-        <span className="text-red-600 text-xs">
+      <div className="w-full h-24 bg-red-50 border border-red-200 rounded p-2 flex flex-col items-center justify-center">
+        <span className="text-red-700 text-xs font-medium mb-1">FESTIVO</span>
+        <span className="text-red-600 text-sm font-semibold">
           {date.toLocaleDateString('es-ES', { day: 'numeric' })}
         </span>
       </div>
