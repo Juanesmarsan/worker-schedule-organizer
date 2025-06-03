@@ -4,6 +4,7 @@ export interface VariableExpense {
   concept: string;
   amount: number;
   date: Date;
+  note?: string;
 }
 
 export interface Project {

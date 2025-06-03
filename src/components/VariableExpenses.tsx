@@ -1,13 +1,16 @@
-
 import { useState, useEffect } from "react";
+import { Plus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Project, VariableExpense } from "@/types/project";
+import VariableExpenseForm from "@/components/VariableExpenseForm";
 
 const VariableExpenses = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [allVariableExpenses, setAllVariableExpenses] = useState<(VariableExpense & { projectName: string })[]>([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   // Simulamos obtener los proyectos (en una app real esto vendría de un contexto compartido o API)
   useEffect(() => {
@@ -21,7 +24,7 @@ const VariableExpenses = () => {
         status: "activo",
         createdAt: new Date(),
         variableExpenses: [
-          { id: 1, concept: "Material eléctrico", amount: 450, date: new Date() },
+          { id: 1, concept: "Material eléctrico", amount: 450, date: new Date(), note: "Cables y enchufes para renovación" },
           { id: 2, concept: "Pintura", amount: 220, date: new Date() }
         ]
       },
@@ -33,7 +36,7 @@ const VariableExpenses = () => {
         status: "activo",
         createdAt: new Date(),
         variableExpenses: [
-          { id: 3, concept: "Licencias software", amount: 150, date: new Date() },
+          { id: 3, concept: "Licencias software", amount: 150, date: new Date(), note: "Renovación anual Office 365" },
           { id: 4, concept: "Repuestos hardware", amount: 80, date: new Date() }
         ]
       }
@@ -51,16 +54,46 @@ const VariableExpenses = () => {
     setAllVariableExpenses(expenses);
   }, []);
 
+  const handleAddExpense = (projectId: number, expenseData: Omit<VariableExpense, 'id'>) => {
+    const newExpense: VariableExpense = {
+      ...expenseData,
+      id: Date.now()
+    };
+
+    const updatedProjects = projects.map(project =>
+      project.id === projectId
+        ? { ...project, variableExpenses: [...project.variableExpenses, newExpense] }
+        : project
+    );
+
+    setProjects(updatedProjects);
+
+    // Actualizar lista unificada
+    const expenses = updatedProjects.flatMap(project =>
+      project.variableExpenses.map(expense => ({
+        ...expense,
+        projectName: project.name
+      }))
+    );
+    setAllVariableExpenses(expenses);
+  };
+
   const totalVariableExpenses = allVariableExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle>Resumen de Gastos Variables</CardTitle>
-          <CardDescription>
-            Todos los gastos variables asignados a proyectos
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Resumen de Gastos Variables</CardTitle>
+            <CardDescription>
+              Todos los gastos variables asignados a proyectos
+            </CardDescription>
+          </div>
+          <Button onClick={() => setIsFormOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo Gasto Variable
+          </Button>
         </CardHeader>
         <CardContent>
           <Table>
@@ -69,6 +102,7 @@ const VariableExpenses = () => {
                 <TableHead>Proyecto</TableHead>
                 <TableHead>Concepto</TableHead>
                 <TableHead>Fecha</TableHead>
+                <TableHead>Nota</TableHead>
                 <TableHead className="text-right">Importe</TableHead>
               </TableRow>
             </TableHeader>
@@ -80,6 +114,13 @@ const VariableExpenses = () => {
                   </TableCell>
                   <TableCell className="font-medium">{expense.concept}</TableCell>
                   <TableCell>{expense.date.toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {expense.note ? (
+                      <span className="text-sm text-muted-foreground">{expense.note}</span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground italic">-</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">{expense.amount.toFixed(2)} €</TableCell>
                 </TableRow>
               ))}
@@ -164,6 +205,13 @@ const VariableExpenses = () => {
           </div>
         </CardContent>
       </Card>
+
+      <VariableExpenseForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        projects={projects}
+        onAddExpense={handleAddExpense}
+      />
     </div>
   );
 };
