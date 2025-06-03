@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarDays, Users, Clock, Briefcase, Plus, Edit } from "lucide-react";
+import { CalendarDays, Users, Clock, Briefcase, Plus, Edit, Calculator } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
@@ -25,7 +26,7 @@ const localizer = dateFnsLocalizer({
   },
 });
 
-type EventType = 'vacation' | 'absence' | 'meeting' | 'deadline' | 'work_hours' | 'note';
+type EventType = 'vacation' | 'absence' | 'work_hours' | 'note';
 
 interface CalendarEvent {
   id: number;
@@ -38,61 +39,79 @@ interface CalendarEvent {
   notes?: string;
 }
 
+// Festivos de Valencia 2024
+const valenciaHolidays2024 = [
+  new Date(2024, 0, 1),  // Año Nuevo
+  new Date(2024, 0, 6),  // Reyes
+  new Date(2024, 2, 19), // San José
+  new Date(2024, 2, 29), // Viernes Santo
+  new Date(2024, 3, 1),  // Lunes de Pascua
+  new Date(2024, 3, 22), // San Vicente Mártir
+  new Date(2024, 4, 1),  // Día del Trabajo
+  new Date(2024, 5, 24), // San Juan
+  new Date(2024, 7, 15), // Asunción
+  new Date(2024, 9, 9),  // Día de la Comunidad Valenciana
+  new Date(2024, 9, 12), // Día de la Hispanidad
+  new Date(2024, 10, 1), // Todos los Santos
+  new Date(2024, 11, 6), // Día de la Constitución
+  new Date(2024, 11, 8), // Inmaculada
+  new Date(2024, 11, 25), // Navidad
+];
+
 const WorkCalendar = () => {
   const { toast } = useToast();
   const [events, setEvents] = useState<CalendarEvent[]>([
     {
       id: 1,
-      title: "Juan Pérez - Vacaciones",
+      title: "8 horas",
+      start: new Date(2024, 5, 3, 9, 0),
+      end: new Date(2024, 5, 3, 17, 0),
+      type: 'work_hours',
+      employee: "Juan Pérez",
+      hours: 8
+    },
+    {
+      id: 2,
+      title: "Vacaciones",
       start: new Date(2024, 5, 10),
       end: new Date(2024, 5, 14),
       type: 'vacation',
       employee: "Juan Pérez"
     },
     {
-      id: 2,
-      title: "María García - Ausencia médica",
-      start: new Date(2024, 5, 3),
-      end: new Date(2024, 5, 3),
+      id: 3,
+      title: "Ausencia médica",
+      start: new Date(2024, 5, 20),
+      end: new Date(2024, 5, 20),
       type: 'absence',
       employee: "María García"
     },
-    {
-      id: 3,
-      title: "Carlos López - 8 horas",
-      start: new Date(2024, 5, 5, 9, 0),
-      end: new Date(2024, 5, 5, 17, 0),
-      type: 'work_hours',
-      employee: "Carlos López",
-      hours: 8
-    },
-    {
-      id: 4,
-      title: "Ana Martín - Reunión cliente",
-      start: new Date(2024, 5, 6, 10, 0),
-      end: new Date(2024, 5, 6, 11, 0),
-      type: 'note',
-      employee: "Ana Martín",
-      notes: "Reunión importante con cliente ABC"
-    }
   ]);
 
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("Juan Pérez");
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedEmployee, setSelectedEmployee] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [formData, setFormData] = useState({
-    employee: "",
-    type: "work_hours" as const,
-    startDate: "",
-    endDate: "",
+    type: "work_hours" as EventType,
+    date: "",
+    hours: 8,
     startTime: "09:00",
     endTime: "17:00",
-    hours: 8,
     title: "",
     notes: ""
   });
 
   const employees = ["Juan Pérez", "María García", "Carlos López", "Ana Martín"];
+
+  // Verificar si una fecha es festivo o domingo
+  const isHolidayOrSunday = (date: Date) => {
+    const isHoliday = valenciaHolidays2024.some(holiday => 
+      holiday.toDateString() === date.toDateString()
+    );
+    const isSunday = date.getDay() === 0;
+    return isHoliday || isSunday;
+  };
 
   const eventStyleGetter = (event: CalendarEvent) => {
     let backgroundColor = '#3174ad';
@@ -103,12 +122,6 @@ const WorkCalendar = () => {
         break;
       case 'absence':
         backgroundColor = '#dc2626';
-        break;
-      case 'meeting':
-        backgroundColor = '#7c3aed';
-        break;
-      case 'deadline':
-        backgroundColor = '#ea580c';
         break;
       case 'work_hours':
         backgroundColor = '#0891b2';
@@ -130,23 +143,64 @@ const WorkCalendar = () => {
     };
   };
 
-  const getEventsForDate = (date: Date) => {
-    const filtered = events.filter(event => {
-      const eventDate = new Date(event.start);
-      const dateMatches = eventDate.toDateString() === date.toDateString();
-      const employeeMatches = selectedEmployee === "all" || event.employee === selectedEmployee;
-      return dateMatches && employeeMatches;
-    });
-    return filtered;
+  // Función para obtener el estilo de las fechas (festivos y domingos)
+  const dayPropGetter = (date: Date) => {
+    if (isHolidayOrSunday(date)) {
+      return {
+        style: {
+          backgroundColor: '#fef3c7', // Color pastel amarillo
+          color: '#92400e'
+        }
+      };
+    }
+    return {};
   };
 
-  const getFilteredEvents = () => {
-    if (selectedEmployee === "all") return events;
+  const getEmployeeEvents = () => {
     return events.filter(event => event.employee === selectedEmployee);
   };
 
-  const todaysEvents = getEventsForDate(new Date());
-  const selectedDateEvents = getEventsForDate(selectedDate);
+  const getEventsForDate = (date: Date) => {
+    return events.filter(event => {
+      const eventDate = new Date(event.start);
+      return eventDate.toDateString() === date.toDateString() && 
+             event.employee === selectedEmployee;
+    });
+  };
+
+  // Calcular horas extras del mes
+  const calculateMonthlyOvertime = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    
+    const monthEvents = events.filter(event => {
+      const eventDate = new Date(event.start);
+      return eventDate.getFullYear() === year &&
+             eventDate.getMonth() === month &&
+             event.employee === selectedEmployee &&
+             event.type === 'work_hours';
+    });
+
+    const totalHours = monthEvents.reduce((sum, event) => sum + (event.hours || 0), 0);
+    
+    // Calcular días laborables del mes (excluyendo festivos y domingos)
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    let workDays = 0;
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      if (!isHolidayOrSunday(date) && date.getDay() !== 6) { // No sábados tampoco
+        workDays++;
+      }
+    }
+    
+    const expectedHours = workDays * 8; // 8 horas por día laborable
+    const overtime = Math.max(0, totalHours - expectedHours);
+    
+    return { totalHours, expectedHours, overtime, workDays };
+  };
+
+  const monthlyStats = calculateMonthlyOvertime();
 
   const getEventTypeIcon = (type: EventType) => {
     switch (type) {
@@ -154,10 +208,6 @@ const WorkCalendar = () => {
         return <CalendarDays className="w-4 h-4" />;
       case 'absence':
         return <Users className="w-4 h-4" />;
-      case 'meeting':
-        return <Briefcase className="w-4 h-4" />;
-      case 'deadline':
-        return <Clock className="w-4 h-4" />;
       case 'work_hours':
         return <Clock className="w-4 h-4" />;
       case 'note':
@@ -173,10 +223,6 @@ const WorkCalendar = () => {
         return <Badge className="bg-green-100 text-green-800">Vacaciones</Badge>;
       case 'absence':
         return <Badge className="bg-red-100 text-red-800">Ausencia</Badge>;
-      case 'meeting':
-        return <Badge className="bg-purple-100 text-purple-800">Reunión</Badge>;
-      case 'deadline':
-        return <Badge className="bg-orange-100 text-orange-800">Fecha límite</Badge>;
       case 'work_hours':
         return <Badge className="bg-cyan-100 text-cyan-800">Horas</Badge>;
       case 'note':
@@ -186,15 +232,14 @@ const WorkCalendar = () => {
     }
   };
 
-  const handleAddEvent = () => {
+  const handleAddEvent = (slotInfo?: any) => {
+    const selectedDate = slotInfo ? slotInfo.start : new Date();
     setFormData({
-      employee: "",
       type: "work_hours",
-      startDate: "",
-      endDate: "",
+      date: selectedDate.toISOString().split('T')[0],
+      hours: 8,
       startTime: "09:00",
       endTime: "17:00",
-      hours: 8,
       title: "",
       notes: ""
     });
@@ -202,31 +247,34 @@ const WorkCalendar = () => {
   };
 
   const handleSaveEvent = () => {
-    if (!formData.employee || !formData.startDate) {
+    if (!formData.date) {
       toast({
         title: "Error",
-        description: "Por favor completa los campos obligatorios",
+        description: "Por favor selecciona una fecha",
         variant: "destructive"
       });
       return;
     }
 
-    const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
-    const endDateTime = formData.endDate 
-      ? new Date(`${formData.endDate}T${formData.endTime}`)
-      : new Date(`${formData.startDate}T${formData.endTime}`);
-
+    const eventDate = new Date(formData.date);
+    let startDateTime, endDateTime;
     let title = "";
+
     if (formData.type === 'work_hours') {
-      title = `${formData.employee} - ${formData.hours}h`;
-    } else if (formData.type === 'vacation') {
-      title = `${formData.employee} - Vacaciones`;
-    } else if (formData.type === 'absence') {
-      title = `${formData.employee} - Ausencia`;
-    } else if (formData.type === 'note') {
-      title = `${formData.employee} - ${formData.title}`;
+      startDateTime = new Date(`${formData.date}T${formData.startTime}`);
+      endDateTime = new Date(`${formData.date}T${formData.endTime}`);
+      title = `${formData.hours}h`;
     } else {
-      title = `${formData.employee} - ${formData.title}`;
+      startDateTime = new Date(formData.date);
+      endDateTime = new Date(formData.date);
+      
+      if (formData.type === 'vacation') {
+        title = "Vacaciones";
+      } else if (formData.type === 'absence') {
+        title = "Ausencia";
+      } else {
+        title = formData.title || "Nota";
+      }
     }
 
     const newEvent: CalendarEvent = {
@@ -235,7 +283,7 @@ const WorkCalendar = () => {
       start: startDateTime,
       end: endDateTime,
       type: formData.type,
-      employee: formData.employee,
+      employee: selectedEmployee,
       hours: formData.type === 'work_hours' ? formData.hours : undefined,
       notes: formData.notes || undefined
     };
@@ -243,7 +291,7 @@ const WorkCalendar = () => {
     setEvents([...events, newEvent]);
     toast({
       title: "Evento añadido",
-      description: "El evento se ha agregado al calendario"
+      description: `Evento agregado para ${selectedEmployee}`
     });
     setIsDialogOpen(false);
   };
@@ -257,6 +305,8 @@ const WorkCalendar = () => {
       setFormData({ ...formData, hours: hours > 0 ? hours : 0 });
     }
   };
+
+  const todaysEvents = getEventsForDate(new Date());
 
   // Calendar messages in Spanish
   const messages = {
@@ -279,8 +329,12 @@ const WorkCalendar = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Calendario de Trabajo</h2>
-          <p className="text-gray-600">Gestiona horas, vacaciones, ausencias y anotaciones</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            Calendario de {selectedEmployee}
+          </h2>
+          <p className="text-gray-600">
+            Gestiona horas diarias, vacaciones y ausencias
+          </p>
         </div>
         <div className="flex gap-2">
           <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
@@ -288,7 +342,6 @@ const WorkCalendar = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos los empleados</SelectItem>
               {employees.map((employee) => (
                 <SelectItem key={employee} value={employee}>
                   {employee}
@@ -296,9 +349,9 @@ const WorkCalendar = () => {
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={handleAddEvent} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={() => handleAddEvent()} className="bg-blue-600 hover:bg-blue-700">
             <Plus className="w-4 h-4 mr-2" />
-            Agregar Evento
+            Agregar
           </Button>
         </div>
       </div>
@@ -308,20 +361,27 @@ const WorkCalendar = () => {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Calendario</CardTitle>
+              <CardTitle>
+                Calendario - {currentMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+              </CardTitle>
               <CardDescription>
-                Haz clic en una fecha para ver los eventos del día
+                Haz clic en una fecha para añadir horas o eventos. 
+                <span className="block text-amber-600 mt-1">
+                  Las fechas en amarillo son festivos o domingos
+                </span>
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div style={{ height: '500px' }}>
                 <Calendar
                   localizer={localizer}
-                  events={getFilteredEvents()}
+                  events={getEmployeeEvents()}
                   startAccessor="start"
                   endAccessor="end"
                   eventPropGetter={eventStyleGetter}
-                  onSelectSlot={(slotInfo) => setSelectedDate(slotInfo.start)}
+                  dayPropGetter={dayPropGetter}
+                  onSelectSlot={handleAddEvent}
+                  onNavigate={(date) => setCurrentMonth(date)}
                   selectable
                   messages={messages}
                   culture="es"
@@ -333,6 +393,43 @@ const WorkCalendar = () => {
 
         {/* Panel lateral */}
         <div className="space-y-6">
+          {/* Resumen mensual de horas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calculator className="w-5 h-5" />
+                Resumen Mensual
+              </CardTitle>
+              <CardDescription>
+                {currentMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Días laborables</span>
+                <Badge variant="outline">{monthlyStats.workDays}</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Horas esperadas</span>
+                <Badge className="bg-blue-100 text-blue-800">
+                  {monthlyStats.expectedHours}h
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Horas trabajadas</span>
+                <Badge className="bg-cyan-100 text-cyan-800">
+                  {monthlyStats.totalHours}h
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Horas extras</span>
+                <Badge className={monthlyStats.overtime > 0 ? "bg-orange-100 text-orange-800" : "bg-gray-100 text-gray-800"}>
+                  {monthlyStats.overtime}h
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Eventos de hoy */}
           <Card>
             <CardHeader>
@@ -368,76 +465,21 @@ const WorkCalendar = () => {
             </CardContent>
           </Card>
 
-          {/* Eventos del día seleccionado */}
-          {selectedDate.toDateString() !== new Date().toDateString() && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarDays className="w-5 h-5" />
-                  {selectedDate.toLocaleDateString('es-ES', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
-                </CardTitle>
-                <CardDescription>
-                  {selectedDateEvents.length} evento(s) programado(s)
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {selectedDateEvents.length > 0 ? (
-                  selectedDateEvents.map((event) => (
-                    <div key={event.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                      <div className="flex items-center space-x-3">
-                        {getEventTypeIcon(event.type)}
-                        <div>
-                          <p className="font-medium text-sm">{event.title}</p>
-                          {event.notes && (
-                            <p className="text-xs text-gray-600">{event.notes}</p>
-                          )}
-                        </div>
-                      </div>
-                      {getEventTypeBadge(event.type)}
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500 text-center py-4">
-                    No hay eventos programados para esta fecha
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Resumen rápido */}
+          {/* Próximos festivos */}
           <Card>
             <CardHeader>
-              <CardTitle>Resumen del Mes</CardTitle>
+              <CardTitle>Próximos Festivos</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Total eventos</span>
-                <Badge variant="outline">{getFilteredEvents().length}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Horas registradas</span>
-                <Badge className="bg-cyan-100 text-cyan-800">
-                  {getFilteredEvents().filter(e => e.type === 'work_hours').length}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Vacaciones</span>
-                <Badge className="bg-green-100 text-green-800">
-                  {getFilteredEvents().filter(e => e.type === 'vacation').length}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Ausencias</span>
-                <Badge className="bg-red-100 text-red-800">
-                  {getFilteredEvents().filter(e => e.type === 'absence').length}
-                </Badge>
-              </div>
+            <CardContent className="space-y-2">
+              {valenciaHolidays2024
+                .filter(holiday => holiday > new Date())
+                .slice(0, 3)
+                .map((holiday, index) => (
+                  <div key={index} className="flex justify-between text-sm">
+                    <span>{holiday.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</span>
+                    <Badge variant="outline" className="text-xs">Festivo</Badge>
+                  </div>
+                ))}
             </CardContent>
           </Card>
         </div>
@@ -447,30 +489,15 @@ const WorkCalendar = () => {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Agregar Evento al Calendario</DialogTitle>
+            <DialogTitle>Agregar para {selectedEmployee}</DialogTitle>
             <DialogDescription>
               Registra horas, ausencias, vacaciones o anotaciones
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="employee">Empleado *</Label>
-              <Select value={formData.employee} onValueChange={(value) => setFormData({ ...formData, employee: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un empleado" />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.map((employee) => (
-                    <SelectItem key={employee} value={employee}>
-                      {employee}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
               <Label htmlFor="type">Tipo de evento *</Label>
-              <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
+              <Select value={formData.type} onValueChange={(value: EventType) => setFormData({ ...formData, type: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -482,26 +509,17 @@ const WorkCalendar = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="startDate">Fecha inicio *</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="endDate">Fecha fin</Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                />
-              </div>
+            
+            <div>
+              <Label htmlFor="date">Fecha *</Label>
+              <Input
+                id="date"
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              />
             </div>
+
             {formData.type === 'work_hours' && (
               <>
                 <div className="grid grid-cols-3 gap-4">
@@ -541,6 +559,7 @@ const WorkCalendar = () => {
                 </div>
               </>
             )}
+
             {formData.type === 'note' && (
               <div>
                 <Label htmlFor="title">Título *</Label>
@@ -552,6 +571,7 @@ const WorkCalendar = () => {
                 />
               </div>
             )}
+
             <div>
               <Label htmlFor="notes">Notas adicionales</Label>
               <Textarea
@@ -561,6 +581,7 @@ const WorkCalendar = () => {
                 placeholder="Información adicional..."
               />
             </div>
+
             <div className="flex justify-end space-x-2 pt-4">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
