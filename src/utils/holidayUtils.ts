@@ -1,25 +1,22 @@
-
-// Festivos nacionales de España y específicos de Valencia ciudad 2024
+// Festivos nacionales de España y específicos de Valencia ciudad 2025
 export const spainNationalHolidays2024 = [
-  new Date(2024, 0, 1),   // Año Nuevo
-  new Date(2024, 0, 6),   // Reyes Magos
-  new Date(2024, 2, 28),  // Jueves Santo (nacional)
-  new Date(2024, 2, 29),  // Viernes Santo (nacional)
-  new Date(2024, 4, 1),   // Día del Trabajo
-  new Date(2024, 7, 15),  // Asunción de la Virgen
-  new Date(2024, 9, 12),  // Día de la Hispanidad
-  new Date(2024, 10, 1),  // Todos los Santos
-  new Date(2024, 11, 6),  // Día de la Constitución
-  new Date(2024, 11, 8),  // Inmaculada Concepción
-  new Date(2024, 11, 25), // Navidad
+  new Date(2025, 0, 1),   // 1 de enero (miércoles): Año Nuevo
+  new Date(2025, 0, 6),   // 6 de enero (lunes): Epifanía del Señor
+  new Date(2025, 3, 18),  // 18 de abril (viernes): Viernes Santo
+  new Date(2025, 4, 1),   // 1 de mayo (jueves): Fiesta del Trabajo
+  new Date(2025, 7, 15),  // 15 de agosto (viernes): Asunción de la Virgen
+  new Date(2025, 10, 1),  // 1 de noviembre (sábado): Todos los Santos
+  new Date(2025, 11, 6),  // 6 de diciembre (sábado): Día de la Constitución Española
+  new Date(2025, 11, 8),  // 8 de diciembre (lunes): Inmaculada Concepción
+  new Date(2025, 11, 25), // 25 de diciembre (jueves): Navidad
 ];
 
 export const valenciaHolidays2024 = [
-  new Date(2024, 2, 19),  // San José (Valencia)
-  new Date(2024, 3, 1),   // Lunes de Pascua (Valencia)
-  new Date(2024, 3, 22),  // San Vicente Mártir (Valencia)
-  new Date(2024, 5, 24),  // San Juan (Valencia)
-  new Date(2024, 9, 9),   // Día de la Comunidad Valenciana
+  new Date(2025, 2, 19),  // 19 de marzo (miércoles): San José
+  new Date(2025, 3, 21),  // 21 de abril (lunes): Lunes de Pascua (en Valencia)
+  new Date(2025, 9, 9),   // 9 de octubre (jueves): Día de la Comunidad Valenciana
+  new Date(2025, 0, 22),  // 22 de enero (miércoles): San Vicente Mártir
+  new Date(2025, 3, 16),  // 16 de abril (miércoles): San Vicente Ferrer
 ];
 
 // Combinamos todos los festivos
