@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,7 @@ const WorkerAssignmentForm = ({ isOpen, onClose, onSave, editingWorker, projectT
   const [selectedWorkerId, setSelectedWorkerId] = useState<string>("");
   const [hourlyRate, setHourlyRate] = useState("");
   const [workDays, setWorkDays] = useState<ProjectWorker['workDays']>([]);
-  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [hours, setHours] = useState("");
 
   const { toast } = useToast();
@@ -101,6 +102,10 @@ const WorkerAssignmentForm = ({ isOpen, onClose, onSave, editingWorker, projectT
 
   const handleRemoveDay = (dateToRemove: string) => {
     setWorkDays(workDays.filter(day => day.date !== dateToRemove));
+    toast({
+      title: "Día eliminado",
+      description: "El día de trabajo ha sido eliminado",
+    });
   };
 
   const handleClose = () => {
@@ -142,6 +147,11 @@ const WorkerAssignmentForm = ({ isOpen, onClose, onSave, editingWorker, projectT
 
     onSave(workerData);
     handleClose();
+
+    toast({
+      title: "Operario asignado",
+      description: `${selectedWorker.name} ha sido asignado con ${workDays.length} días programados`,
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -158,17 +168,18 @@ const WorkerAssignmentForm = ({ isOpen, onClose, onSave, editingWorker, projectT
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {editingWorker ? "Editar Asignación de Operario" : "Asignar Operario al Proyecto"}
           </DialogTitle>
           <DialogDescription>
-            Selecciona un operario y programa sus días de trabajo
+            Selecciona un operario y programa sus días de trabajo. Puedes añadir tantos días como necesites.
           </DialogDescription>
         </DialogHeader>
         
         <div className="grid gap-6 py-4">
+          {/* Selección de operario */}
           <div className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="worker-select">Operario</Label>
@@ -204,77 +215,97 @@ const WorkerAssignmentForm = ({ isOpen, onClose, onSave, editingWorker, projectT
             )}
           </div>
 
-          <div className="grid gap-4">
+          {/* Programación de días */}
+          <div className="grid gap-4 border rounded-lg p-4 bg-gray-50/50">
             <div className="flex items-center justify-between">
-              <Label>Programar Días de Trabajo</Label>
-              <Badge variant="secondary">
-                Total: {getTotalHours()}h
+              <h3 className="text-lg font-semibold">Programar Días de Trabajo</h3>
+              <Badge variant="secondary" className="text-sm">
+                Total: {getTotalHours()}h en {workDays.length} días
               </Badge>
             </div>
             
-            <div className="grid gap-4 border rounded-lg p-4">
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Seleccionar Fecha</Label>
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  className="rounded-md border w-fit"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Selector de fecha */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Seleccionar Fecha</Label>
+                <div className="border rounded-lg p-3 bg-white">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    className="w-full"
+                  />
+                </div>
               </div>
               
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Label className="text-sm font-medium mb-1 block">Horas</Label>
+              {/* Añadir horas y día */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Horas de Trabajo</Label>
                   <Input
                     type="number"
                     step="0.5"
+                    min="0.5"
+                    max="24"
                     placeholder="8"
                     value={hours}
                     onChange={(e) => setHours(e.target.value)}
+                    className="text-lg"
                   />
                 </div>
-                <div className="flex items-end">
-                  <Button onClick={handleAddDay}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Añadir Día
-                  </Button>
-                </div>
+                
+                <Button 
+                  onClick={handleAddDay}
+                  className="w-full"
+                  size="lg"
+                  disabled={!selectedDate || !hours}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Añadir Día
+                </Button>
+
+                {selectedDate && (
+                  <p className="text-sm text-muted-foreground">
+                    Añadiendo: {selectedDate.toLocaleDateString('es-ES')} 
+                    {hours && ` - ${hours} horas`}
+                  </p>
+                )}
               </div>
             </div>
-
-            {workDays.length > 0 && (
-              <div className="grid gap-2">
-                <Label>Días Programados</Label>
-                <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {workDays.map((day) => (
-                    <div key={day.date} className="flex items-center justify-between p-2 border rounded">
-                      <div>
-                        <span className="font-medium">{formatDate(day.date)}</span>
-                        <span className="text-muted-foreground ml-2">
-                          {day.hours}h
-                        </span>
-                      </div>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleRemoveDay(day.date)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
+
+          {/* Lista de días programados */}
+          {workDays.length > 0 && (
+            <div className="grid gap-3 border rounded-lg p-4">
+              <h4 className="font-medium text-lg">Días Programados ({workDays.length})</h4>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {workDays.map((day) => (
+                  <div key={day.date} className="flex items-center justify-between p-3 border rounded-lg bg-white">
+                    <div className="flex-1">
+                      <span className="font-medium">{formatDate(day.date)}</span>
+                      <span className="text-muted-foreground ml-3">
+                        {day.hours} horas
+                      </span>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleRemoveDay(day.date)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
             Cancelar
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} disabled={!selectedWorkerId}>
             {editingWorker ? "Actualizar" : "Asignar"}
           </Button>
         </DialogFooter>
