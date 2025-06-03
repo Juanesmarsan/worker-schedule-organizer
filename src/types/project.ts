@@ -1,3 +1,4 @@
+
 export interface VariableExpense {
   id: number;
   concept: string;
@@ -14,6 +15,7 @@ export interface Project {
   name: string;
   type: "presupuesto" | "administracion";
   budget?: number;
+  hourlyRate?: number;
   description: string;
   status: "activo" | "completado" | "pausado";
   createdAt: Date;

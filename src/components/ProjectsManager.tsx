@@ -24,19 +24,20 @@ const ProjectsManager = () => {
       status: "activo",
       createdAt: new Date(),
       variableExpenses: [
-        { id: 1, concept: "Material eléctrico", amount: 450, date: new Date() },
-        { id: 2, concept: "Pintura", amount: 220, date: new Date() }
+        { id: 1, concept: "Material eléctrico", amount: 450, date: new Date(), paymentMethod: "transferencia" },
+        { id: 2, concept: "Pintura", amount: 220, date: new Date(), paymentMethod: "efectivo" }
       ]
     },
     {
       id: 2,
       name: "Mantenimiento Sistemas",
       type: "administracion",
+      hourlyRate: 50,
       description: "Mantenimiento mensual de sistemas informáticos",
       status: "activo",
       createdAt: new Date(),
       variableExpenses: [
-        { id: 3, concept: "Licencias software", amount: 150, date: new Date() }
+        { id: 3, concept: "Licencias software", amount: 150, date: new Date(), paymentMethod: "tarjeta", creditCardNumber: "**** **** **** 1234" }
       ]
     }
   ]);
@@ -49,6 +50,7 @@ const ProjectsManager = () => {
     name: "",
     type: "presupuesto" as "presupuesto" | "administracion",
     budget: "",
+    hourlyRate: "",
     description: "",
     status: "activo" as "activo" | "completado" | "pausado"
   });
@@ -64,6 +66,7 @@ const ProjectsManager = () => {
       name: "",
       type: "presupuesto",
       budget: "",
+      hourlyRate: "",
       description: "",
       status: "activo"
     });
@@ -77,6 +80,7 @@ const ProjectsManager = () => {
         name: project.name,
         type: project.type,
         budget: project.budget?.toString() || "",
+        hourlyRate: project.hourlyRate?.toString() || "",
         description: project.description,
         status: project.status
       });
@@ -110,10 +114,20 @@ const ProjectsManager = () => {
       return;
     }
 
+    if (formData.type === "administracion" && (!formData.hourlyRate || parseFloat(formData.hourlyRate) <= 0)) {
+      toast({
+        title: "Error",
+        description: "Los proyectos por administración deben tener un precio/hora válido",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const projectData: Omit<Project, 'id' | 'createdAt'> = {
       name: formData.name.trim(),
       type: formData.type,
       budget: formData.type === "presupuesto" ? parseFloat(formData.budget) : undefined,
+      hourlyRate: formData.type === "administracion" ? parseFloat(formData.hourlyRate) : undefined,
       description: formData.description.trim(),
       status: formData.status,
       variableExpenses: editingProject?.variableExpenses || []
@@ -202,7 +216,8 @@ const ProjectsManager = () => {
       id: Date.now(),
       concept: expenseFormData.concept.trim(),
       amount: amount,
-      date: new Date()
+      date: new Date(),
+      paymentMethod: "transferencia"
     };
 
     setProjects(projects.map(project =>
@@ -292,6 +307,18 @@ const ProjectsManager = () => {
                     />
                   </div>
                 )}
+                {formData.type === "administracion" && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="project-hourly-rate">Precio/Hora (€)</Label>
+                    <Input
+                      id="project-hourly-rate"
+                      type="number"
+                      placeholder="0.00"
+                      value={formData.hourlyRate}
+                      onChange={(e) => setFormData({...formData, hourlyRate: e.target.value})}
+                    />
+                  </div>
+                )}
                 <div className="grid gap-2">
                   <Label htmlFor="project-status">Estado</Label>
                   <Select value={formData.status} onValueChange={(value: "activo" | "completado" | "pausado") => setFormData({...formData, status: value})}>
@@ -332,7 +359,7 @@ const ProjectsManager = () => {
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Tipo</TableHead>
-                <TableHead>Presupuesto</TableHead>
+                <TableHead>Presupuesto/Precio-Hora</TableHead>
                 <TableHead>Gastos Variables</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="w-[150px]">Acciones</TableHead>
@@ -382,7 +409,11 @@ const ProjectsManager = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {project.budget ? `${project.budget.toFixed(2)} €` : "-"}
+                      {project.type === "presupuesto" && project.budget 
+                        ? `${project.budget.toFixed(2)} €` 
+                        : project.type === "administracion" && project.hourlyRate
+                        ? `${project.hourlyRate.toFixed(2)} €/h`
+                        : "-"}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
