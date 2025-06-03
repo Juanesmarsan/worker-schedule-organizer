@@ -21,13 +21,16 @@ interface Absence {
   status: 'pending' | 'approved' | 'rejected';
 }
 
-const WorkCalendar = () => {
+interface WorkCalendarProps {
+  absences?: Absence[];
+  onAbsenceAdded?: (absence: Absence) => void;
+  onAbsenceStatusChange?: (id: number, status: 'approved' | 'rejected') => void;
+}
+
+const WorkCalendar = ({ absences = [], onAbsenceAdded, onAbsenceStatusChange }: WorkCalendarProps) => {
   const { toast } = useToast();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("Juan Pérez");
   const [currentDate, setCurrentDate] = useState(new Date());
-  
-  // Estado para las ausencias (compartido entre componentes)
-  const [absences, setAbsences] = useState<Absence[]>([]);
   
   // Almacenar las horas trabajadas por empleado y fecha
   const [employeeWorkHours, setEmployeeWorkHours] = useState<Record<string, Record<string, number>>>({
@@ -76,60 +79,6 @@ const WorkCalendar = () => {
     setCurrentDate(newDate);
   };
 
-  // Función para manejar nuevas ausencias desde AbsenceTracker
-  const handleAbsenceAdded = (newAbsence: Absence) => {
-    setAbsences(prev => [...prev, newAbsence]);
-    
-    // Si es una ausencia de vacaciones aprobada, agregar automáticamente 8 horas por día
-    if (newAbsence.type === 'vacation' && newAbsence.status === 'approved') {
-      const startDate = new Date(newAbsence.startDate);
-      const endDate = new Date(newAbsence.endDate);
-      
-      const updatedHours = { ...employeeWorkHours };
-      if (!updatedHours[newAbsence.employeeName]) {
-        updatedHours[newAbsence.employeeName] = {};
-      }
-      
-      // Iterar por cada día de vacaciones y poner 8 horas
-      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-        const dateKey = d.toISOString().split('T')[0];
-        updatedHours[newAbsence.employeeName][dateKey] = 8;
-      }
-      
-      setEmployeeWorkHours(updatedHours);
-    }
-  };
-
-  // Función para manejar cambios de estado de ausencias
-  const handleAbsenceStatusChange = (id: number, status: 'approved' | 'rejected') => {
-    setAbsences(prev => prev.map(absence => {
-      if (absence.id === id) {
-        const updatedAbsence = { ...absence, status };
-        
-        // Si se aprueba una ausencia de vacaciones, agregar 8 horas automáticamente
-        if (status === 'approved' && absence.type === 'vacation') {
-          const startDate = new Date(absence.startDate);
-          const endDate = new Date(absence.endDate);
-          
-          const updatedHours = { ...employeeWorkHours };
-          if (!updatedHours[absence.employeeName]) {
-            updatedHours[absence.employeeName] = {};
-          }
-          
-          for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            const dateKey = d.toISOString().split('T')[0];
-            updatedHours[absence.employeeName][dateKey] = 8;
-          }
-          
-          setEmployeeWorkHours(updatedHours);
-        }
-        
-        return updatedAbsence;
-      }
-      return absence;
-    }));
-  };
-
   const currentEmployeeHours = employeeWorkHours[selectedEmployee] || {};
 
   // Calcular estadísticas mensuales
@@ -141,12 +90,14 @@ const WorkCalendar = () => {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     let workDays = 0;
     let totalHours = 0;
+    let laboralHours = 0; // Nueva variable para horas laborales
     
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       const dayOfWeek = date.getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Domingo o sábado
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
       const isHolidayDate = isHoliday(date);
+      const isVacation = isVacationDay(date, selectedEmployee);
       
       // Solo contar días laborables (lunes a viernes, no festivos)
       if (!isWeekend && !isHolidayDate) {
@@ -157,16 +108,22 @@ const WorkCalendar = () => {
       const dateKey = date.toISOString().split('T')[0];
       const hoursWorked = currentEmployeeHours[dateKey] || 0;
       totalHours += hoursWorked;
+      
+      // Sumar horas laborales (solo días laborables, no festivos ni domingos)
+      if (!isHolidayDate && dayOfWeek !== 0) {
+        laboralHours += hoursWorked;
+      }
     }
     
-    const expectedHours = workDays * 8; // 8 horas por día laboral
+    const expectedHours = workDays * 8;
     const overtime = Math.max(0, totalHours - expectedHours);
     
     return {
       workDays,
       expectedHours,
       totalHours,
-      overtime
+      overtime,
+      laboralHours // Agregar horas laborales a las estadísticas
     };
   };
 
@@ -229,6 +186,12 @@ const WorkCalendar = () => {
                   <span>Días con horas:</span>
                   <span className="font-medium">
                     {Object.keys(currentEmployeeHours).length}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Horas laborales:</span>
+                  <span className="font-medium">
+                    {monthlyStats.laboralHours}h
                   </span>
                 </div>
               </div>

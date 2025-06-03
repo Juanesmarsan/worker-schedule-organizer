@@ -27,4 +27,5 @@ export interface MonthlyStats {
   expectedHours: number;
   overtime: number;
   workDays: number;
+  laboralHours?: number; // Agregar horas laborales
 }

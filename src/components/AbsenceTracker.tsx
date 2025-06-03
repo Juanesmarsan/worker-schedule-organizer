@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Plus, Calendar, Clock, User } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,31 +21,14 @@ interface Absence {
   status: 'pending' | 'approved' | 'rejected';
 }
 
-const AbsenceTracker = () => {
-  const { toast } = useToast();
-  const [absences, setAbsences] = useState<Absence[]>([
-    {
-      id: 1,
-      employeeName: "Juan Pérez",
-      type: 'vacation',
-      startDate: "2024-06-10",
-      endDate: "2024-06-14",
-      days: 5,
-      reason: "Vacaciones familiares",
-      status: 'approved'
-    },
-    {
-      id: 2,
-      employeeName: "María García",
-      type: 'sick',
-      startDate: "2024-06-03",
-      endDate: "2024-06-03",
-      days: 1,
-      reason: "Malestar general",
-      status: 'approved'
-    }
-  ]);
+interface AbsenceTrackerProps {
+  absences: Absence[];
+  onAbsenceAdded: (absence: Absence) => void;
+  onAbsenceStatusChange: (id: number, status: 'approved' | 'rejected') => void;
+}
 
+const AbsenceTracker = ({ absences, onAbsenceAdded, onAbsenceStatusChange }: AbsenceTrackerProps) => {
+  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     employeeName: "",
@@ -56,7 +38,7 @@ const AbsenceTracker = () => {
     reason: ""
   });
 
-  const employees = ["Juan Pérez", "María García", "Carlos López"];
+  const employees = ["Juan Pérez", "María García", "Carlos López", "Ana Martín"];
 
   const calculateDays = (start: string, end: string) => {
     if (!start || !end) return 0;
@@ -96,7 +78,7 @@ const AbsenceTracker = () => {
       status: 'pending'
     };
 
-    setAbsences([...absences, newAbsence]);
+    onAbsenceAdded(newAbsence);
     toast({
       title: "Ausencia registrada",
       description: "La ausencia se ha registrado y está pendiente de aprobación"
@@ -105,9 +87,7 @@ const AbsenceTracker = () => {
   };
 
   const handleStatusChange = (id: number, status: 'approved' | 'rejected') => {
-    setAbsences(absences.map(absence => 
-      absence.id === id ? { ...absence, status } : absence
-    ));
+    onAbsenceStatusChange(id, status);
     toast({
       title: `Ausencia ${status === 'approved' ? 'aprobada' : 'rechazada'}`,
       description: "El estado de la ausencia se ha actualizado"
