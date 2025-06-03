@@ -5,7 +5,14 @@ import { format, parse, startOfWeek, getDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, Users, Clock, Briefcase } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { CalendarDays, Users, Clock, Briefcase, Plus, Edit } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 // Proper localizer configuration
@@ -24,12 +31,15 @@ interface CalendarEvent {
   title: string;
   start: Date;
   end: Date;
-  type: 'vacation' | 'absence' | 'meeting' | 'deadline';
-  employee?: string;
+  type: 'vacation' | 'absence' | 'meeting' | 'deadline' | 'work_hours' | 'note';
+  employee: string;
+  hours?: number;
+  notes?: string;
 }
 
 const WorkCalendar = () => {
-  const [events] = useState<CalendarEvent[]>([
+  const { toast } = useToast();
+  const [events, setEvents] = useState<CalendarEvent[]>([
     {
       id: 1,
       title: "Juan Pérez - Vacaciones",
@@ -48,21 +58,40 @@ const WorkCalendar = () => {
     },
     {
       id: 3,
-      title: "Reunión de equipo",
-      start: new Date(2024, 5, 5, 10, 0),
-      end: new Date(2024, 5, 5, 11, 0),
-      type: 'meeting'
+      title: "Carlos López - 8 horas",
+      start: new Date(2024, 5, 5, 9, 0),
+      end: new Date(2024, 5, 5, 17, 0),
+      type: 'work_hours',
+      employee: "Carlos López",
+      hours: 8
     },
     {
       id: 4,
-      title: "Entrega proyecto",
-      start: new Date(2024, 5, 15),
-      end: new Date(2024, 5, 15),
-      type: 'deadline'
+      title: "Ana Martín - Reunión cliente",
+      start: new Date(2024, 5, 6, 10, 0),
+      end: new Date(2024, 5, 6, 11, 0),
+      type: 'note',
+      employee: "Ana Martín",
+      notes: "Reunión importante con cliente ABC"
     }
   ]);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("all");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    employee: "",
+    type: "work_hours" as const,
+    startDate: "",
+    endDate: "",
+    startTime: "09:00",
+    endTime: "17:00",
+    hours: 8,
+    title: "",
+    notes: ""
+  });
+
+  const employees = ["Juan Pérez", "María García", "Carlos López", "Ana Martín"];
 
   const eventStyleGetter = (event: CalendarEvent) => {
     let backgroundColor = '#3174ad';
@@ -80,6 +109,12 @@ const WorkCalendar = () => {
       case 'deadline':
         backgroundColor = '#ea580c';
         break;
+      case 'work_hours':
+        backgroundColor = '#0891b2';
+        break;
+      case 'note':
+        backgroundColor = '#7c2d12';
+        break;
     }
 
     return {
@@ -95,10 +130,18 @@ const WorkCalendar = () => {
   };
 
   const getEventsForDate = (date: Date) => {
-    return events.filter(event => {
+    const filtered = events.filter(event => {
       const eventDate = new Date(event.start);
-      return eventDate.toDateString() === date.toDateString();
+      const dateMatches = eventDate.toDateString() === date.toDateString();
+      const employeeMatches = selectedEmployee === "all" || event.employee === selectedEmployee;
+      return dateMatches && employeeMatches;
     });
+    return filtered;
+  };
+
+  const getFilteredEvents = () => {
+    if (selectedEmployee === "all") return events;
+    return events.filter(event => event.employee === selectedEmployee);
   };
 
   const todaysEvents = getEventsForDate(new Date());
@@ -114,6 +157,10 @@ const WorkCalendar = () => {
         return <Briefcase className="w-4 h-4" />;
       case 'deadline':
         return <Clock className="w-4 h-4" />;
+      case 'work_hours':
+        return <Clock className="w-4 h-4" />;
+      case 'note':
+        return <Edit className="w-4 h-4" />;
       default:
         return <CalendarDays className="w-4 h-4" />;
     }
@@ -129,8 +176,89 @@ const WorkCalendar = () => {
         return <Badge className="bg-purple-100 text-purple-800">Reunión</Badge>;
       case 'deadline':
         return <Badge className="bg-orange-100 text-orange-800">Fecha límite</Badge>;
+      case 'work_hours':
+        return <Badge className="bg-cyan-100 text-cyan-800">Horas</Badge>;
+      case 'note':
+        return <Badge className="bg-amber-100 text-amber-800">Nota</Badge>;
       default:
         return <Badge variant="secondary">Evento</Badge>;
+    }
+  };
+
+  const handleAddEvent = () => {
+    setFormData({
+      employee: "",
+      type: "work_hours",
+      startDate: "",
+      endDate: "",
+      startTime: "09:00",
+      endTime: "17:00",
+      hours: 8,
+      title: "",
+      notes: ""
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleSaveEvent = () => {
+    if (!formData.employee || !formData.startDate) {
+      toast({
+        title: "Error",
+        description: "Por favor completa los campos obligatorios",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
+    const endDateTime = formData.endDate 
+      ? new Date(`${formData.endDate}T${formData.endTime}`)
+      : new Date(`${formData.startDate}T${formData.endTime}`);
+
+    let title = "";
+    switch (formData.type) {
+      case 'work_hours':
+        title = `${formData.employee} - ${formData.hours}h`;
+        break;
+      case 'vacation':
+        title = `${formData.employee} - Vacaciones`;
+        break;
+      case 'absence':
+        title = `${formData.employee} - Ausencia`;
+        break;
+      case 'note':
+        title = `${formData.employee} - ${formData.title}`;
+        break;
+      default:
+        title = `${formData.employee} - ${formData.title}`;
+    }
+
+    const newEvent: CalendarEvent = {
+      id: Date.now(),
+      title,
+      start: startDateTime,
+      end: endDateTime,
+      type: formData.type,
+      employee: formData.employee,
+      hours: formData.type === 'work_hours' ? formData.hours : undefined,
+      notes: formData.notes || undefined
+    };
+
+    setEvents([...events, newEvent]);
+    toast({
+      title: "Evento añadido",
+      description: "El evento se ha agregado al calendario"
+    });
+    setIsDialogOpen(false);
+  };
+
+  const calculateHours = () => {
+    if (formData.startTime && formData.endTime) {
+      const start = new Date(`2024-01-01T${formData.startTime}`);
+      const end = new Date(`2024-01-01T${formData.endTime}`);
+      const diffMs = end.getTime() - start.getTime();
+      const hours = Math.round(diffMs / (1000 * 60 * 60));
+      setFormData({ ...formData, hours: hours > 0 ? hours : 0 });
     }
   };
 
@@ -153,9 +281,30 @@ const WorkCalendar = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Calendario de Trabajo</h2>
-        <p className="text-gray-600">Visualiza vacaciones, ausencias y eventos importantes</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Calendario de Trabajo</h2>
+          <p className="text-gray-600">Gestiona horas, vacaciones, ausencias y anotaciones</p>
+        </div>
+        <div className="flex gap-2">
+          <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los empleados</SelectItem>
+              {employees.map((employee) => (
+                <SelectItem key={employee} value={employee}>
+                  {employee}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={handleAddEvent} className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="w-4 h-4 mr-2" />
+            Agregar Evento
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -172,7 +321,7 @@ const WorkCalendar = () => {
               <div style={{ height: '500px' }}>
                 <Calendar
                   localizer={localizer}
-                  events={events}
+                  events={getFilteredEvents()}
                   startAccessor="start"
                   endAccessor="end"
                   eventPropGetter={eventStyleGetter}
@@ -207,8 +356,8 @@ const WorkCalendar = () => {
                       {getEventTypeIcon(event.type)}
                       <div>
                         <p className="font-medium text-sm">{event.title}</p>
-                        {event.employee && (
-                          <p className="text-xs text-gray-600">{event.employee}</p>
+                        {event.notes && (
+                          <p className="text-xs text-gray-600">{event.notes}</p>
                         )}
                       </div>
                     </div>
@@ -248,8 +397,8 @@ const WorkCalendar = () => {
                         {getEventTypeIcon(event.type)}
                         <div>
                           <p className="font-medium text-sm">{event.title}</p>
-                          {event.employee && (
-                            <p className="text-xs text-gray-600">{event.employee}</p>
+                          {event.notes && (
+                            <p className="text-xs text-gray-600">{event.notes}</p>
                           )}
                         </div>
                       </div>
@@ -273,30 +422,160 @@ const WorkCalendar = () => {
             <CardContent className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm">Total eventos</span>
-                <Badge variant="outline">{events.length}</Badge>
+                <Badge variant="outline">{getFilteredEvents().length}</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Horas registradas</span>
+                <Badge className="bg-cyan-100 text-cyan-800">
+                  {getFilteredEvents().filter(e => e.type === 'work_hours').length}
+                </Badge>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm">Vacaciones</span>
                 <Badge className="bg-green-100 text-green-800">
-                  {events.filter(e => e.type === 'vacation').length}
+                  {getFilteredEvents().filter(e => e.type === 'vacation').length}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm">Ausencias</span>
                 <Badge className="bg-red-100 text-red-800">
-                  {events.filter(e => e.type === 'absence').length}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Reuniones</span>
-                <Badge className="bg-purple-100 text-purple-800">
-                  {events.filter(e => e.type === 'meeting').length}
+                  {getFilteredEvents().filter(e => e.type === 'absence').length}
                 </Badge>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Dialog para agregar eventos */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Agregar Evento al Calendario</DialogTitle>
+            <DialogDescription>
+              Registra horas, ausencias, vacaciones o anotaciones
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="employee">Empleado *</Label>
+              <Select value={formData.employee} onValueChange={(value) => setFormData({ ...formData, employee: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un empleado" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((employee) => (
+                    <SelectItem key={employee} value={employee}>
+                      {employee}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="type">Tipo de evento *</Label>
+              <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="work_hours">Horas de trabajo</SelectItem>
+                  <SelectItem value="vacation">Vacaciones</SelectItem>
+                  <SelectItem value="absence">Ausencia</SelectItem>
+                  <SelectItem value="note">Anotación</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="startDate">Fecha inicio *</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="endDate">Fecha fin</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                />
+              </div>
+            </div>
+            {formData.type === 'work_hours' && (
+              <>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="startTime">Hora inicio</Label>
+                    <Input
+                      id="startTime"
+                      type="time"
+                      value={formData.startTime}
+                      onChange={(e) => {
+                        setFormData({ ...formData, startTime: e.target.value });
+                        setTimeout(calculateHours, 100);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="endTime">Hora fin</Label>
+                    <Input
+                      id="endTime"
+                      type="time"
+                      value={formData.endTime}
+                      onChange={(e) => {
+                        setFormData({ ...formData, endTime: e.target.value });
+                        setTimeout(calculateHours, 100);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="hours">Horas totales</Label>
+                    <Input
+                      id="hours"
+                      type="number"
+                      value={formData.hours}
+                      onChange={(e) => setFormData({ ...formData, hours: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+            {formData.type === 'note' && (
+              <div>
+                <Label htmlFor="title">Título *</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Título de la anotación"
+                />
+              </div>
+            )}
+            <div>
+              <Label htmlFor="notes">Notas adicionales</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Información adicional..."
+              />
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveEvent}>
+                Guardar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
