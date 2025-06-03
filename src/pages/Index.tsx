@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Users, Clock, Calendar, TrendingUp, User, CalendarDays } from "lucide-react";
+import { Users, Clock, Calendar, TrendingUp, User, CalendarDays, DollarSign, FileText, Briefcase } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +9,8 @@ import EmployeeManager from "@/components/EmployeeManager";
 import AbsenceTracker from "@/components/AbsenceTracker";
 import HourTracker from "@/components/HourTracker";
 import WorkCalendar from "@/components/WorkCalendar";
+import FixedExpenses from "@/components/FixedExpenses";
+import ProjectsManager from "@/components/ProjectsManager";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -41,7 +43,7 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-fit">
+          <TabsList className="grid w-full grid-cols-7 lg:w-fit">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               Dashboard
@@ -61,6 +63,14 @@ const Index = () => {
             <TabsTrigger value="calendar" className="flex items-center gap-2">
               <CalendarDays className="w-4 h-4" />
               Calendario
+            </TabsTrigger>
+            <TabsTrigger value="fixed-expenses" className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              Gastos Fijos
+            </TabsTrigger>
+            <TabsTrigger value="projects" className="flex items-center gap-2">
+              <Briefcase className="w-4 h-4" />
+              Proyectos
             </TabsTrigger>
           </TabsList>
 
@@ -164,6 +174,14 @@ const Index = () => {
 
           <TabsContent value="calendar">
             <WorkCalendar />
+          </TabsContent>
+
+          <TabsContent value="fixed-expenses">
+            <FixedExpenses />
+          </TabsContent>
+
+          <TabsContent value="projects">
+            <ProjectsManager />
           </TabsContent>
         </Tabs>
       </div>
