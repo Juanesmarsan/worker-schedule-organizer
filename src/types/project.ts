@@ -20,6 +20,15 @@ export interface ProjectWorker {
   }[];
 }
 
+export interface TimelineStep {
+  id: number;
+  title: string;
+  concept: string;
+  startDate?: Date;
+  endDate?: Date;
+  status: 'completed' | 'in-progress' | 'pending';
+}
+
 export interface Project {
   id: number;
   name: string;
@@ -32,4 +41,5 @@ export interface Project {
   createdAt: Date;
   variableExpenses: VariableExpense[];
   workers: ProjectWorker[];
+  timelineSteps?: TimelineStep[];
 }

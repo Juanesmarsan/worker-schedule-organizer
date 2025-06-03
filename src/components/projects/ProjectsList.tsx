@@ -1,4 +1,3 @@
-
 import { Edit, Trash2, DollarSign, Users } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -48,13 +47,74 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
     return 0;
   };
 
-  // Función para calcular la semana actual del proyecto basada en su fecha de creación
-  const getCurrentProjectWeek = (project: Project) => {
-    const now = new Date();
-    const createdAt = new Date(project.createdAt);
-    const diffTime = Math.abs(now.getTime() - createdAt.getTime());
-    const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
-    return Math.min(diffWeeks, 9); // Máximo 9 semanas
+  // Función para obtener los pasos por defecto del timeline
+  const getDefaultTimelineSteps = (): TimelineStep[] => {
+    return [
+      {
+        id: 1,
+        title: "PASO 1:",
+        concept: "Consulta Inicial Cliente",
+        status: 'pending'
+      },
+      {
+        id: 2,
+        title: "PASO 2:",
+        concept: "Diseño del Proyecto",
+        status: 'pending'
+      },
+      {
+        id: 3,
+        title: "PASO 3:",
+        concept: "Concepto Inicial Diseño",
+        status: 'pending'
+      },
+      {
+        id: 4,
+        title: "PASO 4:",
+        concept: "Liberar Diseño Para Oferta",
+        status: 'pending'
+      },
+      {
+        id: 5,
+        title: "PASO 5:",
+        concept: "2do Concepto Diseño",
+        status: 'pending'
+      },
+      {
+        id: 6,
+        title: "PASO 6:",
+        concept: "Presentación Ventas & Propuestas",
+        status: 'pending'
+      },
+      {
+        id: 7,
+        title: "PASO 7:",
+        concept: "Compra de Materiales",
+        status: 'pending'
+      },
+      {
+        id: 8,
+        title: "PASO 8:",
+        concept: "Instalar",
+        status: 'pending'
+      },
+      {
+        id: 9,
+        title: "PASO 9:",
+        concept: "Revisar Proyecto Finalizado",
+        status: 'pending'
+      }
+    ];
+  };
+
+  const handleUpdateTimelineStep = (projectId: number, step: TimelineStep) => {
+    console.log('Updating timeline step:', step, 'for project:', projectId);
+    // Aquí se implementaría la lógica para actualizar el paso en el proyecto
+  };
+
+  const handleAddTimelineStep = (projectId: number) => {
+    console.log('Adding new timeline step for project:', projectId);
+    // Aquí se implementaría la lógica para añadir un nuevo paso
   };
 
   return (
@@ -65,6 +125,9 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
         const totalWorkerHours = project.workers.reduce((total, worker) => 
           total + worker.workDays.reduce((sum, day) => sum + day.hours, 0), 0
         );
+        
+        // Usar los pasos del timeline del proyecto o los por defecto
+        const timelineSteps = project.timelineSteps || getDefaultTimelineSteps();
         
         return (
           <div key={project.id} className="border rounded-lg p-4 bg-white">
@@ -211,7 +274,9 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
               <div className="mt-4">
                 <ProjectTimeline 
                   projectName={project.name}
-                  currentWeek={getCurrentProjectWeek(project)}
+                  timelineSteps={timelineSteps}
+                  onUpdateStep={(step) => handleUpdateTimelineStep(project.id, step)}
+                  onAddStep={() => handleAddTimelineStep(project.id)}
                 />
               </div>
             )}
