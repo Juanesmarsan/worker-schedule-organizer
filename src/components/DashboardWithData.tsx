@@ -19,6 +19,7 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
   const [projectStatusData, setProjectStatusData] = useState<any[]>([]);
   const [workersData, setWorkersData] = useState<any[]>([]);
   const [absenceData, setAbsenceData] = useState<any[]>([]);
+  const [projectTypeData, setProjectTypeData] = useState<any[]>([]);
   const [mapboxToken, setMapboxToken] = useState<string>("");
 
   const totalRevenue = projects.reduce((sum, project) => {
@@ -59,6 +60,14 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
     absences: {
       label: "Ausencias",
       color: "#ef4444",
+    },
+    administracion: {
+      label: "Administración",
+      color: "#8b5cf6",
+    },
+    presupuesto: {
+      label: "Presupuesto",
+      color: "#f59e0b",
     },
   };
 
@@ -170,6 +179,47 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
     });
 
     setAbsenceData(absenceAnalysis);
+
+    // Calcular rendimiento por tipo de proyecto
+    const adminProjects = projects.filter(p => p.type === 'administracion');
+    const budgetProjects = projects.filter(p => p.type === 'presupuesto');
+
+    const adminRevenue = adminProjects.reduce((sum, project) => 
+      sum + ((project.hourlyRate || 0) * 160), 0);
+    const adminExpenses = adminProjects.reduce((sum, project) => 
+      sum + (project.variableExpenses?.reduce((expSum, exp) => expSum + exp.amount, 0) || 0), 0);
+    
+    const budgetRevenue = budgetProjects.reduce((sum, project) => 
+      sum + (project.budget || 0), 0);
+    const budgetExpenses = budgetProjects.reduce((sum, project) => 
+      sum + (project.variableExpenses?.reduce((expSum, exp) => expSum + exp.amount, 0) || 0), 0);
+
+    const adminProfit = adminRevenue - adminExpenses;
+    const budgetProfit = budgetRevenue - budgetExpenses;
+    
+    const adminMargin = adminRevenue > 0 ? ((adminProfit / adminRevenue) * 100) : 0;
+    const budgetMargin = budgetRevenue > 0 ? ((budgetProfit / budgetRevenue) * 100) : 0;
+
+    const typeComparisonData = [
+      {
+        tipo: 'Administración',
+        ingresos: adminRevenue,
+        gastos: adminExpenses,
+        beneficio: adminProfit,
+        margen: adminMargin,
+        proyectos: adminProjects.length
+      },
+      {
+        tipo: 'Presupuesto',
+        ingresos: budgetRevenue,
+        gastos: budgetExpenses,
+        beneficio: budgetProfit,
+        margen: budgetMargin,
+        proyectos: budgetProjects.length
+      }
+    ];
+
+    setProjectTypeData(typeComparisonData);
   }, [projects, absences]);
 
   return (
@@ -299,6 +349,72 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
                 <ChartTooltip content={<ChartTooltipContent />} />
               </PieChart>
             </ChartContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Rendimiento por Tipo de Proyecto</CardTitle>
+            <CardDescription>Comparación entre proyectos de administración y presupuesto</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig}>
+              <BarChart data={projectTypeData}>
+                <XAxis dataKey="tipo" />
+                <YAxis />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar 
+                  dataKey="ingresos" 
+                  fill="#3b82f6" 
+                  name="Ingresos (€)"
+                />
+                <Bar 
+                  dataKey="gastos" 
+                  fill="#ef4444" 
+                  name="Gastos (€)"
+                />
+                <Bar 
+                  dataKey="beneficio" 
+                  fill="#22c55e" 
+                  name="Beneficio (€)"
+                />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Detalles por Tipo de Proyecto</CardTitle>
+            <CardDescription>Métricas detalladas de rendimiento</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {projectTypeData.map((type, index) => (
+                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-8 h-8 ${type.tipo === 'Administración' ? 'bg-purple-100' : 'bg-yellow-100'} rounded-full flex items-center justify-center`}>
+                      <Building className={`w-4 h-4 ${type.tipo === 'Administración' ? 'text-purple-600' : 'text-yellow-600'}`} />
+                    </div>
+                    <div>
+                      <p className="font-medium">{type.tipo}</p>
+                      <p className="text-sm text-gray-500">{type.proyectos} proyectos</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-green-600">€{type.beneficio.toLocaleString()}</p>
+                    <Badge variant="secondary" className="text-xs">
+                      {type.margen.toFixed(1)}% margen
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+              {projectTypeData.length === 0 && (
+                <p className="text-center text-gray-500 py-4">No hay datos de proyectos disponibles</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
