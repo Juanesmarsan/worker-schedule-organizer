@@ -1,17 +1,18 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { isHoliday, isHolidayOrSunday } from "@/utils/holidayUtils";
+import { isHoliday } from "@/utils/holidayUtils";
 
 interface DayCellProps {
   date: Date;
   employee: string;
   workHours?: number;
   onHoursChange: (date: Date, hours: number) => void;
-  isVacationDay?: boolean;
+  absenceType?: string | null;
 }
 
-export const DayCell = ({ date, employee, workHours, onHoursChange, isVacationDay }: DayCellProps) => {
+export const DayCell = ({ date, employee, workHours, onHoursChange, absenceType }: DayCellProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempHours, setTempHours] = useState(workHours?.toString() || "");
 
@@ -19,9 +20,8 @@ export const DayCell = ({ date, employee, workHours, onHoursChange, isVacationDa
   const isWeekend = date.getDay() === 0 || date.getDay() === 6;
   const isSunday = date.getDay() === 0;
   const isSaturday = date.getDay() === 6;
-  const isVacation = isVacationDay || false;
 
-  console.log(`Fecha: ${date.toDateString()}, Es festivo: ${isHolidayDate}, Es domingo: ${isSunday}, Es fin de semana: ${isWeekend}, Es vacación: ${isVacation}`);
+  console.log(`Fecha: ${date.toDateString()}, Es festivo: ${isHolidayDate}, Es domingo: ${isSunday}, Es fin de semana: ${isWeekend}, Tipo ausencia: ${absenceType}`);
 
   const handleSave = () => {
     const hours = parseFloat(tempHours) || 0;
@@ -34,50 +34,114 @@ export const DayCell = ({ date, employee, workHours, onHoursChange, isVacationDa
     setIsEditing(false);
   };
 
-  // Si es un día de vacaciones, mostrarlo con fondo verde suave
-  if (isVacation) {
-    return (
-      <div className="w-full h-24 bg-green-50 border border-green-200 rounded p-1">
-        <div className="text-xs text-green-600 mb-1">
-          {date.toLocaleDateString('es-ES', { day: 'numeric' })}
-        </div>
-        <div className="flex h-16">
-          {/* Lado izquierdo - 8 horas para vacaciones */}
-          <div className="flex-1 bg-green-100 border-r border-green-200 flex items-center justify-center">
-            <span className="text-green-700 font-bold text-lg">8</span>
+  // Función para obtener las horas por defecto según el tipo de ausencia
+  const getDefaultHours = (type: string | null) => {
+    switch (type) {
+      case 'vacation':
+      case 'sick':
+      case 'work_leave':
+        return '8';
+      case 'personal':
+      case 'other':
+      default:
+        return '0';
+    }
+  };
+
+  // Función para obtener los estilos según el tipo de ausencia
+  const getAbsenceStyles = (type: string | null) => {
+    switch (type) {
+      case 'vacation':
+        return {
+          bg: 'bg-green-50',
+          border: 'border-green-200',
+          textColor: 'text-green-600',
+          leftBg: 'bg-green-100',
+          leftBorder: 'border-green-200',
+          leftText: 'text-green-700'
+        };
+      case 'sick':
+        return {
+          bg: 'bg-orange-50',
+          border: 'border-orange-200',
+          textColor: 'text-orange-600',
+          leftBg: 'bg-orange-100',
+          leftBorder: 'border-orange-200',
+          leftText: 'text-orange-700'
+        };
+      case 'work_leave':
+        return {
+          bg: 'bg-amber-50',
+          border: 'border-amber-200',
+          textColor: 'text-amber-600',
+          leftBg: 'bg-amber-100',
+          leftBorder: 'border-amber-200',
+          leftText: 'text-amber-700'
+        };
+      case 'personal':
+      case 'other':
+        return {
+          bg: 'bg-yellow-50',
+          border: 'border-yellow-200',
+          textColor: 'text-yellow-600',
+          leftBg: 'bg-yellow-100',
+          leftBorder: 'border-yellow-200',
+          leftText: 'text-yellow-700'
+        };
+      default:
+        return null;
+    }
+  };
+
+  // Si hay una ausencia, mostrarla con el color correspondiente
+  if (absenceType) {
+    const styles = getAbsenceStyles(absenceType);
+    const defaultHours = getDefaultHours(absenceType);
+    
+    if (styles) {
+      return (
+        <div className={`w-full h-24 ${styles.bg} border ${styles.border} rounded p-1`}>
+          <div className={`text-xs ${styles.textColor} mb-1`}>
+            {date.toLocaleDateString('es-ES', { day: 'numeric' })}
           </div>
-          
-          {/* Lado derecho - Horas editables para vacaciones */}
-          <div className="flex-1 flex items-center justify-center p-1">
-            {isEditing ? (
-              <div className="w-full">
-                <Input
-                  type="number"
-                  value={tempHours}
-                  onChange={(e) => setTempHours(e.target.value)}
-                  className="h-8 text-xs text-center"
-                  onBlur={handleSave}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSave();
-                    if (e.key === 'Escape') handleCancel();
-                  }}
-                  autoFocus
-                />
-              </div>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-full text-xs p-1"
-                onClick={() => setIsEditing(true)}
-              >
-                {workHours || '8'}h
-              </Button>
-            )}
+          <div className="flex h-16">
+            {/* Lado izquierdo - Horas por defecto según tipo */}
+            <div className={`flex-1 ${styles.leftBg} border-r ${styles.leftBorder} flex items-center justify-center`}>
+              <span className={`${styles.leftText} font-bold text-lg`}>{defaultHours}</span>
+            </div>
+            
+            {/* Lado derecho - Horas editables */}
+            <div className="flex-1 flex items-center justify-center p-1">
+              {isEditing ? (
+                <div className="w-full">
+                  <Input
+                    type="number"
+                    value={tempHours}
+                    onChange={(e) => setTempHours(e.target.value)}
+                    className="h-8 text-xs text-center"
+                    onBlur={handleSave}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSave();
+                      if (e.key === 'Escape') handleCancel();
+                    }}
+                    autoFocus
+                  />
+                </div>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-full text-xs p-1"
+                  onClick={() => setIsEditing(true)}
+                >
+                  {workHours || defaultHours}h
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    );
+      );
+    }
   }
 
   // Si es un día festivo, mostrarlo con fondo rojo suave

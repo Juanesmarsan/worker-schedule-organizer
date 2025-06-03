@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WorkCalendar from "@/components/WorkCalendar";
@@ -9,18 +8,7 @@ import ProjectsManager from "@/components/ProjectsManager";
 import PayrollManager from "@/components/PayrollManager";
 import VariableExpenses from "@/components/VariableExpenses";
 import FixedExpenses from "@/components/FixedExpenses";
-
-// Tipo para las ausencias
-interface Absence {
-  id: number;
-  employeeName: string;
-  type: 'vacation' | 'sick' | 'personal' | 'other';
-  startDate: string;
-  endDate: string;
-  days: number;
-  reason: string;
-  status: 'pending' | 'approved' | 'rejected';
-}
+import { Absence } from "@/types/calendar";
 
 const Index = () => {
   // Estado compartido para las ausencias

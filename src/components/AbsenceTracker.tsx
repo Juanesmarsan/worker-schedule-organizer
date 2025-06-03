@@ -9,17 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-
-interface Absence {
-  id: number;
-  employeeName: string;
-  type: 'vacation' | 'sick' | 'personal' | 'other';
-  startDate: string;
-  endDate: string;
-  days: number;
-  reason: string;
-  status: 'pending' | 'approved' | 'rejected';
-}
+import { Absence } from "@/types/calendar";
 
 interface AbsenceTrackerProps {
   absences: Absence[];
@@ -99,9 +89,11 @@ const AbsenceTracker = ({ absences, onAbsenceAdded, onAbsenceStatusChange }: Abs
       case 'vacation':
         return <Badge className="bg-blue-100 text-blue-800">Vacaciones</Badge>;
       case 'sick':
-        return <Badge className="bg-red-100 text-red-800">Enfermedad</Badge>;
+        return <Badge className="bg-orange-100 text-orange-800">Enfermedad</Badge>;
       case 'personal':
         return <Badge className="bg-yellow-100 text-yellow-800">Personal</Badge>;
+      case 'work_leave':
+        return <Badge className="bg-amber-100 text-amber-800">Baja Laboral</Badge>;
       case 'other':
         return <Badge className="bg-gray-100 text-gray-800">Otro</Badge>;
       default:
@@ -228,6 +220,7 @@ const AbsenceTracker = ({ absences, onAbsenceAdded, onAbsenceStatusChange }: Abs
                 <SelectContent>
                   <SelectItem value="vacation">Vacaciones</SelectItem>
                   <SelectItem value="sick">Enfermedad</SelectItem>
+                  <SelectItem value="work_leave">Baja Laboral</SelectItem>
                   <SelectItem value="personal">Personal</SelectItem>
                   <SelectItem value="other">Otro</SelectItem>
                 </SelectContent>

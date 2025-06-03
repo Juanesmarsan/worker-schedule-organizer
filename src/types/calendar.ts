@@ -27,5 +27,17 @@ export interface MonthlyStats {
   expectedHours: number;
   overtime: number;
   workDays: number;
-  laboralHours?: number; // Agregar horas laborales
+  laboralHours?: number;
+}
+
+// Tipo para las ausencias
+export interface Absence {
+  id: number;
+  employeeName: string;
+  type: 'vacation' | 'sick' | 'personal' | 'other' | 'work_leave';
+  startDate: string;
+  endDate: string;
+  days: number;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
 }

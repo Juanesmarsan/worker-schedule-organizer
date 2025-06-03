@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,7 +6,7 @@ import { MonthlyStats } from "./calendar/MonthlyStats";
 import { HolidaysList } from "./calendar/HolidaysList";
 import { getAllHolidays, isHoliday } from "@/utils/holidayUtils";
 import { useToast } from "@/hooks/use-toast";
-import { MonthlyStats as MonthlyStatsType } from "@/types/calendar";
+import { MonthlyStats as MonthlyStatsType, Absence } from "@/types/calendar";
 
 // Tipo para las ausencias
 interface Absence {
@@ -46,16 +45,16 @@ const WorkCalendar = ({ absences = [], onAbsenceAdded, onAbsenceStatusChange }: 
   const currentYear = currentDate.getFullYear();
   const currentYearHolidays = getAllHolidays(currentYear);
 
-  // Función para verificar si una fecha es día de vacaciones aprobadas
-  const isVacationDay = (date: Date, employee: string): boolean => {
+  // Función para verificar el tipo de ausencia de un día específico
+  const getAbsenceType = (date: Date, employee: string): string | null => {
     const dateStr = date.toISOString().split('T')[0];
-    return absences.some(absence => 
+    const absence = absences.find(absence => 
       absence.employeeName === employee &&
-      absence.type === 'vacation' &&
       absence.status === 'approved' &&
       dateStr >= absence.startDate &&
       dateStr <= absence.endDate
     );
+    return absence ? absence.type : null;
   };
 
   const handleHoursChange = (date: Date, hours: number) => {
@@ -162,7 +161,7 @@ const WorkCalendar = ({ absences = [], onAbsenceAdded, onAbsenceStatusChange }: 
             workHours={currentEmployeeHours}
             onHoursChange={handleHoursChange}
             onDateChange={handleDateChange}
-            isVacationDay={(date) => isVacationDay(date, selectedEmployee)}
+            getAbsenceType={(date) => getAbsenceType(date, selectedEmployee)}
           />
         </div>
 
