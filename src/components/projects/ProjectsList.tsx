@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Project } from "@/types/project";
 
 interface ProjectsListProps {
@@ -12,17 +13,24 @@ interface ProjectsListProps {
   onDelete: (id: number) => void;
   onAddExpense: (project: Project) => void;
   onRemoveExpense: (projectId: number, expenseId: number) => void;
+  onStatusChange: (projectId: number, status: Project['status']) => void;
 }
 
-const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpense }: ProjectsListProps) => {
+const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpense, onStatusChange }: ProjectsListProps) => {
   const getStatusBadge = (status: Project['status']) => {
     const variants = {
-      activo: "default",
-      completado: "secondary",
-      pausado: "destructive"
+      activo: "default", // azul
+      completado: "destructive", // rojo
+      pausado: "secondary"
     } as const;
 
-    return <Badge variant={variants[status]}>{status}</Badge>;
+    const labels = {
+      activo: "Activo",
+      completado: "Finalizado",
+      pausado: "Pausado"
+    };
+
+    return <Badge variant={variants[status]}>{labels[status]}</Badge>;
   };
 
   return (
@@ -99,7 +107,38 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
                   </Button>
                 </div>
               </TableCell>
-              <TableCell>{getStatusBadge(project.status)}</TableCell>
+              <TableCell>
+                <Select 
+                  value={project.status} 
+                  onValueChange={(value: Project['status']) => onStatusChange(project.id, value)}
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue>
+                      {getStatusBadge(project.status)}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="activo">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                        Activo
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="completado">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                        Finalizado
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="pausado">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-gray-500"></div>
+                        Pausado
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </TableCell>
               <TableCell>
                 <div className="flex gap-2">
                   <Button

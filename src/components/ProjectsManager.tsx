@@ -113,6 +113,25 @@ const ProjectsManager = () => {
     });
   };
 
+  const handleStatusChange = (projectId: number, status: Project['status']) => {
+    setProjects(projects.map(project =>
+      project.id === projectId
+        ? { ...project, status }
+        : project
+    ));
+
+    const statusLabels = {
+      activo: "Activo",
+      completado: "Finalizado", 
+      pausado: "Pausado"
+    };
+
+    toast({
+      title: "Estado actualizado",
+      description: `El proyecto ha sido marcado como ${statusLabels[status]}`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -135,6 +154,7 @@ const ProjectsManager = () => {
             onDelete={deleteProject}
             onAddExpense={openExpenseDialog}
             onRemoveExpense={removeVariableExpense}
+            onStatusChange={handleStatusChange}
           />
         </CardContent>
       </Card>
