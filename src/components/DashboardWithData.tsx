@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { TrendingUp, TrendingDown, Users, Building, Clock, Euro, Calendar, AlertTriangle, MapPin } from "lucide-react";
+import { TrendingUp, TrendingDown, Users, Building, Clock, Euro, Calendar, AlertTriangle, MapPin, UserX } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, LineChart, Line, ComposedChart } from "recharts";
 import { Project } from "@/types/project";
 import { Absence } from "@/types/calendar";
 import ProjectMap from "@/components/maps/ProjectMap";
@@ -18,6 +18,7 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
   const [monthlyProjectData, setMonthlyProjectData] = useState<any[]>([]);
   const [projectStatusData, setProjectStatusData] = useState<any[]>([]);
   const [workersData, setWorkersData] = useState<any[]>([]);
+  const [absenceData, setAbsenceData] = useState<any[]>([]);
   const [mapboxToken, setMapboxToken] = useState<string>("");
 
   const totalRevenue = projects.reduce((sum, project) => {
@@ -50,6 +51,14 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
     projects: {
       label: "Proyectos",
       color: "#22c55e",
+    },
+    workDays: {
+      label: "Días Trabajados",
+      color: "#3b82f6",
+    },
+    absences: {
+      label: "Ausencias",
+      color: "#ef4444",
     },
   };
 
@@ -113,7 +122,55 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
       },
     ];
     setWorkersData(workersAnalysis);
-  }, [projects]);
+
+    // Calcular datos de ausencias por empleado
+    const employees = ['Juan Pérez', 'María García', 'Carlos López', 'Ana Martín'];
+    const absenceAnalysis = employees.map(employee => {
+      const employeeAbsences = absences.filter(absence => absence.employeeName === employee);
+      
+      // Calcular días de ausencia por tipo
+      const vacationDays = employeeAbsences
+        .filter(a => a.type === 'vacation' && a.status === 'approved')
+        .reduce((sum, a) => sum + a.days, 0);
+      
+      const sickDays = employeeAbsences
+        .filter(a => a.type === 'sick' && a.status === 'approved')
+        .reduce((sum, a) => sum + a.days, 0);
+      
+      const personalDays = employeeAbsences
+        .filter(a => a.type === 'personal' && a.status === 'approved')
+        .reduce((sum, a) => sum + a.days, 0);
+
+      const otherDays = employeeAbsences
+        .filter(a => a.type === 'other' && a.status === 'approved')
+        .reduce((sum, a) => sum + a.days, 0);
+
+      // Calcular días trabajados estimados (incluyendo fines de semana para algunos)
+      const currentDate = new Date();
+      const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+      const totalDaysInMonth = daysInMonth;
+      const totalAbsenceDays = vacationDays + sickDays + personalDays + otherDays;
+      
+      // Simular que algunos trabajadores trabajan fines de semana
+      const worksWeekends = employee === 'Juan Pérez' || employee === 'Carlos López';
+      const weekendDays = Math.floor(daysInMonth / 7) * 2;
+      const availableDays = worksWeekends ? totalDaysInMonth : totalDaysInMonth - weekendDays;
+      const workDays = Math.max(0, availableDays - totalAbsenceDays);
+
+      return {
+        employee,
+        workDays,
+        vacacionDias: vacationDays,
+        enfermedadDias: sickDays,
+        personalDias: personalDays,
+        otrosDias: otherDays,
+        totalAusencias: totalAbsenceDays,
+        worksWeekends
+      };
+    });
+
+    setAbsenceData(absenceAnalysis);
+  }, [projects, absences]);
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -242,6 +299,75 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
                 <ChartTooltip content={<ChartTooltipContent />} />
               </PieChart>
             </ChartContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Análisis de Ausencias por Empleado</CardTitle>
+            <CardDescription>Días trabajados vs ausencias por motivo</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig}>
+              <ComposedChart data={absenceData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <XAxis 
+                  dataKey="employee" 
+                  tick={{ fontSize: 11 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="workDays" fill="#3b82f6" name="Días Trabajados" />
+                <Bar dataKey="vacacionDias" fill="#fbbf24" name="Vacaciones" />
+                <Bar dataKey="enfermedadDias" fill="#ef4444" name="Enfermedad" />
+                <Bar dataKey="personalDias" fill="#8b5cf6" name="Personal" />
+                <Bar dataKey="otrosDias" fill="#6b7280" name="Otros" />
+                <Line 
+                  type="monotone" 
+                  dataKey="totalAusencias" 
+                  stroke="#dc2626" 
+                  strokeWidth={2}
+                  name="Total Ausencias"
+                />
+              </ComposedChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Detalles de Ausencias</CardTitle>
+            <CardDescription>Información detallada por empleado</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {absenceData.map((employee, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <UserX className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{employee.employee}</p>
+                      <p className="text-sm text-gray-500">
+                        {employee.worksWeekends ? 'Trabaja fines de semana' : 'Solo días laborables'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-green-600">{employee.workDays} días trabajados</p>
+                    <p className="text-sm text-red-600">{employee.totalAusencias} días ausente</p>
+                  </div>
+                </div>
+              ))}
+              {absenceData.length === 0 && (
+                <p className="text-center text-gray-500 py-4">No hay datos de ausencias disponibles</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
