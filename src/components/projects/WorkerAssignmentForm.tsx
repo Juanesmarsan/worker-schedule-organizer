@@ -25,8 +25,7 @@ const WorkerAssignmentForm = ({ isOpen, onClose, onSave, editingWorker, projectT
   const [selectedWorkerId, setSelectedWorkerId] = useState<string>("");
   const [hourlyRate, setHourlyRate] = useState("");
   const [workDays, setWorkDays] = useState<ProjectWorker['workDays']>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [hours, setHours] = useState("");
+  const [defaultHours, setDefaultHours] = useState("8");
 
   const { toast } = useToast();
 
@@ -42,8 +41,6 @@ const WorkerAssignmentForm = ({ isOpen, onClose, onSave, editingWorker, projectT
         setHourlyRate("");
         setWorkDays([]);
       }
-      setSelectedDate(undefined);
-      setHours("");
     }
   }, [isOpen, editingWorker, availableWorkers]);
 
@@ -55,48 +52,41 @@ const WorkerAssignmentForm = ({ isOpen, onClose, onSave, editingWorker, projectT
     }
   };
 
-  const handleAddDay = () => {
-    if (!selectedDate) {
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+
+    if (!defaultHours || parseFloat(defaultHours) <= 0) {
       toast({
         title: "Error",
-        description: "Selecciona una fecha",
+        description: "Configura las horas por defecto antes de seleccionar días",
         variant: "destructive"
       });
       return;
     }
 
-    if (!hours || parseFloat(hours) <= 0) {
-      toast({
-        title: "Error",
-        description: "Introduce un número de horas válido",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const dateString = selectedDate.toISOString().split('T')[0];
+    const dateString = date.toISOString().split('T')[0];
     
+    // Si ya existe, lo quitamos
     if (workDays.some(day => day.date === dateString)) {
+      setWorkDays(workDays.filter(day => day.date !== dateString));
       toast({
-        title: "Error",
-        description: "Ya existe un registro para esta fecha",
-        variant: "destructive"
+        title: "Día eliminado",
+        description: `Se ha eliminado el ${date.toLocaleDateString('es-ES')}`,
       });
       return;
     }
 
+    // Si no existe, lo añadimos
     const newWorkDay = {
       date: dateString,
-      hours: parseFloat(hours)
+      hours: parseFloat(defaultHours)
     };
 
     setWorkDays([...workDays, newWorkDay].sort((a, b) => a.date.localeCompare(b.date)));
-    setHours("");
-    setSelectedDate(undefined);
 
     toast({
       title: "Día añadido",
-      description: `Se han registrado ${hours} horas para el ${selectedDate.toLocaleDateString('es-ES')}`,
+      description: `Se han registrado ${defaultHours} horas para el ${date.toLocaleDateString('es-ES')}`,
     });
   };
 
@@ -112,8 +102,6 @@ const WorkerAssignmentForm = ({ isOpen, onClose, onSave, editingWorker, projectT
     setSelectedWorkerId("");
     setHourlyRate("");
     setWorkDays([]);
-    setSelectedDate(undefined);
-    setHours("");
     onClose();
   };
 
@@ -166,6 +154,11 @@ const WorkerAssignmentForm = ({ isOpen, onClose, onSave, editingWorker, projectT
     return workDays.reduce((total, day) => total + day.hours, 0);
   };
 
+  // Convertir workDays a fechas seleccionadas para el calendario
+  const getSelectedDates = () => {
+    return workDays.map(day => new Date(day.date + 'T00:00:00'));
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
@@ -174,7 +167,7 @@ const WorkerAssignmentForm = ({ isOpen, onClose, onSave, editingWorker, projectT
             {editingWorker ? "Editar Asignación de Operario" : "Asignar Operario al Proyecto"}
           </DialogTitle>
           <DialogDescription>
-            Selecciona un operario y programa sus días de trabajo. Puedes añadir tantos días como necesites.
+            Selecciona un operario y haz clic en los días del calendario para programar el trabajo. Haz clic de nuevo para quitar un día.
           </DialogDescription>
         </DialogHeader>
         
@@ -208,68 +201,53 @@ const WorkerAssignmentForm = ({ isOpen, onClose, onSave, editingWorker, projectT
                   value={hourlyRate}
                   onChange={(e) => setHourlyRate(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Precio que nos pagan por hora de este operario en este proyecto
-                </p>
               </div>
             )}
+          </div>
+
+          {/* Configuración de horas por defecto */}
+          <div className="grid gap-2">
+            <Label htmlFor="default-hours">Horas por Día (por defecto)</Label>
+            <Input
+              id="default-hours"
+              type="number"
+              step="0.5"
+              min="0.5"
+              max="24"
+              placeholder="8"
+              value={defaultHours}
+              onChange={(e) => setDefaultHours(e.target.value)}
+              className="w-32"
+            />
+            <p className="text-xs text-muted-foreground">
+              Horas que se asignarán automáticamente al hacer clic en un día
+            </p>
           </div>
 
           {/* Programación de días */}
           <div className="grid gap-4 border rounded-lg p-4 bg-gray-50/50">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Programar Días de Trabajo</h3>
+              <h3 className="text-lg font-semibold">Seleccionar Días de Trabajo</h3>
               <Badge variant="secondary" className="text-sm">
                 Total: {getTotalHours()}h en {workDays.length} días
               </Badge>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Selector de fecha */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Seleccionar Fecha</Label>
-                <div className="border rounded-lg p-3 bg-white">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-              
-              {/* Añadir horas y día */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Horas de Trabajo</Label>
-                  <Input
-                    type="number"
-                    step="0.5"
-                    min="0.5"
-                    max="24"
-                    placeholder="8"
-                    value={hours}
-                    onChange={(e) => setHours(e.target.value)}
-                    className="text-lg"
-                  />
-                </div>
-                
-                <Button 
-                  onClick={handleAddDay}
-                  className="w-full"
-                  size="lg"
-                  disabled={!selectedDate || !hours}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Añadir Día
-                </Button>
-
-                {selectedDate && (
-                  <p className="text-sm text-muted-foreground">
-                    Añadiendo: {selectedDate.toLocaleDateString('es-ES')} 
-                    {hours && ` - ${hours} horas`}
-                  </p>
-                )}
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Haz clic en los días del calendario para añadir/quitar días de trabajo
+              </p>
+              <div className="border rounded-lg p-3 bg-white">
+                <Calendar
+                  mode="multiple"
+                  selected={getSelectedDates()}
+                  onSelect={(dates) => {
+                    // Este callback se ejecuta cuando se seleccionan múltiples fechas
+                    // Pero vamos a manejar la selección individualmente con onDayClick
+                  }}
+                  onDayClick={handleDateSelect}
+                  className="w-full pointer-events-auto"
+                />
               </div>
             </div>
           </div>
