@@ -1,10 +1,11 @@
+
 import { Edit, Trash2, DollarSign, Users } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Project } from "@/types/project";
+import { Project, TimelineStep } from "@/types/project";
 import ProjectTimeline from "./ProjectTimeline";
 
 interface ProjectsListProps {
