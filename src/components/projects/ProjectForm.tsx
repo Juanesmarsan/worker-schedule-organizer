@@ -94,7 +94,8 @@ const ProjectForm = ({ isOpen, onClose, editingProject, onSave }: ProjectFormPro
       hourlyRate: formData.type === "administracion" ? parseFloat(formData.hourlyRate) : undefined,
       description: formData.description.trim(),
       status: formData.status,
-      variableExpenses: editingProject?.variableExpenses || []
+      variableExpenses: editingProject?.variableExpenses || [],
+      workers: editingProject?.workers || []
     };
 
     onSave(projectData);

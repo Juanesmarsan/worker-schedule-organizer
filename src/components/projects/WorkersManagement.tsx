@@ -5,16 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Project, ProjectWorker } from "@/types/project";
+import { Worker } from "@/types/worker";
 import WorkerForm from "./WorkerForm";
 import WorkerSchedule from "./WorkerSchedule";
+import WorkerAssignmentForm from "./WorkerAssignmentForm";
 
 interface WorkersManagementProps {
   project: Project;
   onUpdateProject: (project: Project) => void;
+  availableWorkers: Worker[];
 }
 
-const WorkersManagement = ({ project, onUpdateProject }: WorkersManagementProps) => {
+const WorkersManagement = ({ project, onUpdateProject, availableWorkers }: WorkersManagementProps) => {
   const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
+  const [isAssignmentFormOpen, setIsAssignmentFormOpen] = useState(false);
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [editingWorker, setEditingWorker] = useState<ProjectWorker | null>(null);
   const [selectedWorker, setSelectedWorker] = useState<ProjectWorker | null>(null);
@@ -33,6 +37,35 @@ const WorkersManagement = ({ project, onUpdateProject }: WorkersManagementProps)
     
     onUpdateProject(updatedProject);
     setIsWorkerFormOpen(false);
+  };
+
+  const handleAssignWorker = (workerData: Omit<ProjectWorker, 'id'>) => {
+    if (editingWorker) {
+      // Editando operario existente
+      const updatedProject = {
+        ...project,
+        workers: project.workers.map(worker =>
+          worker.id === editingWorker.id
+            ? { ...worker, ...workerData }
+            : worker
+        )
+      };
+      onUpdateProject(updatedProject);
+      setEditingWorker(null);
+    } else {
+      // Asignando nuevo operario
+      const newWorker: ProjectWorker = {
+        ...workerData,
+        id: Date.now()
+      };
+
+      const updatedProject = {
+        ...project,
+        workers: [...project.workers, newWorker]
+      };
+      onUpdateProject(updatedProject);
+    }
+    setIsAssignmentFormOpen(false);
   };
 
   const handleEditWorker = (workerData: Omit<ProjectWorker, 'id' | 'workDays'>) => {
@@ -74,6 +107,11 @@ const WorkersManagement = ({ project, onUpdateProject }: WorkersManagementProps)
     onUpdateProject(updatedProject);
   };
 
+  const openAssignmentForm = (worker?: ProjectWorker) => {
+    setEditingWorker(worker || null);
+    setIsAssignmentFormOpen(true);
+  };
+
   const openWorkerForm = (worker?: ProjectWorker) => {
     setEditingWorker(worker || null);
     setIsWorkerFormOpen(true);
@@ -104,10 +142,16 @@ const WorkersManagement = ({ project, onUpdateProject }: WorkersManagementProps)
             Gestiona los operarios que trabajarán en este proyecto
           </CardDescription>
         </div>
-        <Button onClick={() => openWorkerForm()}>
-          <Plus className="w-4 h-4 mr-2" />
-          Añadir Operario
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => openWorkerForm()}>
+            <Plus className="w-4 h-4 mr-2" />
+            Crear Operario
+          </Button>
+          <Button onClick={() => openAssignmentForm()}>
+            <Plus className="w-4 h-4 mr-2" />
+            Asignar Operario
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {project.workers.length === 0 ? (
@@ -150,7 +194,7 @@ const WorkersManagement = ({ project, onUpdateProject }: WorkersManagementProps)
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => openWorkerForm(worker)}
+                    onClick={() => openAssignmentForm(worker)}
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -176,6 +220,18 @@ const WorkersManagement = ({ project, onUpdateProject }: WorkersManagementProps)
           onSave={editingWorker ? handleEditWorker : handleAddWorker}
           editingWorker={editingWorker}
           projectType={project.type}
+        />
+
+        <WorkerAssignmentForm
+          isOpen={isAssignmentFormOpen}
+          onClose={() => {
+            setIsAssignmentFormOpen(false);
+            setEditingWorker(null);
+          }}
+          onSave={handleAssignWorker}
+          editingWorker={editingWorker}
+          projectType={project.type}
+          availableWorkers={availableWorkers}
         />
 
         <WorkerSchedule

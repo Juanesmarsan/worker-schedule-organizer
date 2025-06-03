@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Project, VariableExpense } from "@/types/project";
+import { Worker } from "@/types/worker";
 import ProjectForm from "@/components/projects/ProjectForm";
 import ProjectsList from "@/components/projects/ProjectsList";
 import ProjectsStats from "@/components/projects/ProjectsStats";
@@ -42,6 +42,15 @@ const ProjectsManager = () => {
     }
   ]);
 
+  // Lista de operarios disponibles
+  const [availableWorkers] = useState<Worker[]>([
+    { id: 1, name: "Juan Pérez", defaultHourlyRate: 25 },
+    { id: 2, name: "María García", defaultHourlyRate: 30 },
+    { id: 3, name: "Carlos López", defaultHourlyRate: 28 },
+    { id: 4, name: "Ana Martín", defaultHourlyRate: 32 },
+    { id: 5, name: "Pedro Ruiz", defaultHourlyRate: 26 }
+  ]);
+
   const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -70,8 +79,7 @@ const ProjectsManager = () => {
       const newProject: Project = {
         ...projectData,
         id: Date.now(),
-        createdAt: new Date(),
-        workers: []
+        createdAt: new Date()
       };
       setProjects([...projects, newProject]);
       toast({
@@ -181,6 +189,7 @@ const ProjectsManager = () => {
         <WorkersManagement
           project={selectedProjectForWorkers}
           onUpdateProject={handleUpdateProject}
+          availableWorkers={availableWorkers}
         />
       )}
 
