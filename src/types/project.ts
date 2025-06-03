@@ -10,6 +10,16 @@ export interface VariableExpense {
   creditCardNumber?: string;
 }
 
+export interface ProjectWorker {
+  id: number;
+  name: string;
+  hourlyRate?: number; // Solo para proyectos de administración
+  workDays: {
+    date: string; // formato YYYY-MM-DD
+    hours: number;
+  }[];
+}
+
 export interface Project {
   id: number;
   name: string;
@@ -20,4 +30,5 @@ export interface Project {
   status: "activo" | "completado" | "pausado";
   createdAt: Date;
   variableExpenses: VariableExpense[];
+  workers: ProjectWorker[];
 }

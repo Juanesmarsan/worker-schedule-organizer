@@ -1,5 +1,5 @@
 
-import { Edit, Trash2, DollarSign } from "lucide-react";
+import { Edit, Trash2, DollarSign, Users } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,10 @@ interface ProjectsListProps {
   onAddExpense: (project: Project) => void;
   onRemoveExpense: (projectId: number, expenseId: number) => void;
   onStatusChange: (projectId: number, status: Project['status']) => void;
+  onManageWorkers: (project: Project) => void;
 }
 
-const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpense, onStatusChange }: ProjectsListProps) => {
+const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpense, onStatusChange, onManageWorkers }: ProjectsListProps) => {
   const getStatusBadge = (status: Project['status']) => {
     const variants = {
       activo: "default", // azul
@@ -33,6 +34,19 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
     return <Badge variant={variants[status]}>{labels[status]}</Badge>;
   };
 
+  const getTotalWorkerCost = (project: Project) => {
+    if (project.type === "administracion") {
+      return project.workers.reduce((total, worker) => {
+        if (worker.hourlyRate) {
+          const workerHours = worker.workDays.reduce((sum, day) => sum + day.hours, 0);
+          return total + (workerHours * worker.hourlyRate);
+        }
+        return total;
+      }, 0);
+    }
+    return 0;
+  };
+
   return (
     <Table>
       <TableHeader>
@@ -41,13 +55,19 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
           <TableHead>Tipo</TableHead>
           <TableHead>Presupuesto/Precio-Hora</TableHead>
           <TableHead>Gastos Variables</TableHead>
+          <TableHead>Operarios</TableHead>
           <TableHead>Estado</TableHead>
-          <TableHead className="w-[150px]">Acciones</TableHead>
+          <TableHead className="w-[200px]">Acciones</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {projects.map((project) => {
           const variableTotal = project.variableExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+          const workerCost = getTotalWorkerCost(project);
+          const totalWorkerHours = project.workers.reduce((total, worker) => 
+            total + worker.workDays.reduce((sum, day) => sum + day.hours, 0), 0
+          );
+          
           return (
             <TableRow key={project.id}>
               <TableCell>
@@ -104,6 +124,26 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
                     onClick={() => onAddExpense(project)}
                   >
                     <DollarSign className="w-3 h-3" />
+                  </Button>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <div className="text-xs">
+                    <div>{project.workers.length} operarios</div>
+                    <div className="text-muted-foreground">
+                      {totalWorkerHours}h total
+                      {project.type === "administracion" && workerCost > 0 && (
+                        <div>{workerCost.toFixed(2)}€</div>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onManageWorkers(project)}
+                  >
+                    <Users className="w-3 h-3" />
                   </Button>
                 </div>
               </TableCell>

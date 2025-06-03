@@ -9,6 +9,7 @@ import ProjectForm from "@/components/projects/ProjectForm";
 import ProjectsList from "@/components/projects/ProjectsList";
 import ProjectsStats from "@/components/projects/ProjectsStats";
 import QuickExpenseForm from "@/components/projects/QuickExpenseForm";
+import WorkersManagement from "@/components/projects/WorkersManagement";
 
 const ProjectsManager = () => {
   const [projects, setProjects] = useState<Project[]>([
@@ -23,7 +24,8 @@ const ProjectsManager = () => {
       variableExpenses: [
         { id: 1, concept: "Material eléctrico", amount: 450, date: new Date(), paymentMethod: "transferencia" },
         { id: 2, concept: "Pintura", amount: 220, date: new Date(), paymentMethod: "efectivo" }
-      ]
+      ],
+      workers: []
     },
     {
       id: 2,
@@ -35,7 +37,8 @@ const ProjectsManager = () => {
       createdAt: new Date(),
       variableExpenses: [
         { id: 3, concept: "Licencias software", amount: 150, date: new Date(), paymentMethod: "tarjeta", creditCardNumber: "**** **** **** 1234" }
-      ]
+      ],
+      workers: []
     }
   ]);
 
@@ -43,6 +46,7 @@ const ProjectsManager = () => {
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [selectedProjectForExpense, setSelectedProjectForExpense] = useState<Project | null>(null);
+  const [selectedProjectForWorkers, setSelectedProjectForWorkers] = useState<Project | null>(null);
 
   const { toast } = useToast();
 
@@ -66,7 +70,8 @@ const ProjectsManager = () => {
       const newProject: Project = {
         ...projectData,
         id: Date.now(),
-        createdAt: new Date()
+        createdAt: new Date(),
+        workers: []
       };
       setProjects([...projects, newProject]);
       toast({
@@ -132,6 +137,16 @@ const ProjectsManager = () => {
     });
   };
 
+  const handleManageWorkers = (project: Project) => {
+    setSelectedProjectForWorkers(project);
+  };
+
+  const handleUpdateProject = (updatedProject: Project) => {
+    setProjects(projects.map(project =>
+      project.id === updatedProject.id ? updatedProject : project
+    ));
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -139,7 +154,7 @@ const ProjectsManager = () => {
           <div>
             <CardTitle>Gestión de Proyectos</CardTitle>
             <CardDescription>
-              Administra proyectos por presupuesto y por administración, incluyendo gastos variables
+              Administra proyectos por presupuesto y por administración, incluyendo gastos variables y operarios
             </CardDescription>
           </div>
           <Button onClick={() => handleOpenProjectForm()}>
@@ -155,11 +170,19 @@ const ProjectsManager = () => {
             onAddExpense={openExpenseDialog}
             onRemoveExpense={removeVariableExpense}
             onStatusChange={handleStatusChange}
+            onManageWorkers={handleManageWorkers}
           />
         </CardContent>
       </Card>
 
       <ProjectsStats projects={projects} />
+
+      {selectedProjectForWorkers && (
+        <WorkersManagement
+          project={selectedProjectForWorkers}
+          onUpdateProject={handleUpdateProject}
+        />
+      )}
 
       <ProjectForm
         isOpen={isProjectFormOpen}
