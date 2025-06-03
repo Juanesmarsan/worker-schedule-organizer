@@ -58,47 +58,27 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
   };
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Nombre</TableHead>
-          <TableHead>Tipo</TableHead>
-          <TableHead>Presupuesto/Precio-Hora</TableHead>
-          <TableHead>Gastos Variables</TableHead>
-          <TableHead>Operarios</TableHead>
-          <TableHead>Estado</TableHead>
-          <TableHead className="w-[200px]">Acciones</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {projects.map((project) => {
-          const variableTotal = project.variableExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-          const workerCost = getTotalWorkerCost(project);
-          const totalWorkerHours = project.workers.reduce((total, worker) => 
-            total + worker.workDays.reduce((sum, day) => sum + day.hours, 0), 0
-          );
-          
-          return (
-            <TableRow key={project.id}>
-              <TableCell>
+    <div className="space-y-4">
+      {projects.map((project) => {
+        const variableTotal = project.variableExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const workerCost = getTotalWorkerCost(project);
+        const totalWorkerHours = project.workers.reduce((total, worker) => 
+          total + worker.workDays.reduce((sum, day) => sum + day.hours, 0), 0
+        );
+        
+        return (
+          <div key={project.id} className="border rounded-lg p-4 bg-white">
+            {/* Información principal del proyecto */}
+            <div className="grid grid-cols-7 gap-4 items-center mb-4">
+              <div>
                 <Collapsible>
-                  <CollapsibleTrigger className="font-medium hover:underline">
+                  <CollapsibleTrigger className="font-medium hover:underline text-left">
                     {project.name}
                   </CollapsibleTrigger>
                   <CollapsibleContent className="mt-2">
-                    <div className="text-sm text-muted-foreground mb-4">
+                    <div className="text-sm text-muted-foreground">
                       {project.description}
                     </div>
-                    
-                    {/* Timeline para proyectos de presupuesto */}
-                    {project.type === "presupuesto" && (
-                      <div className="mb-4">
-                        <ProjectTimeline 
-                          projectName={project.name}
-                          currentWeek={getCurrentProjectWeek(project)}
-                        />
-                      </div>
-                    )}
                     
                     {project.variableExpenses.length > 0 && (
                       <div className="mt-2 space-y-1">
@@ -123,20 +103,23 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
                     )}
                   </CollapsibleContent>
                 </Collapsible>
-              </TableCell>
-              <TableCell>
+              </div>
+              
+              <div>
                 <Badge variant={project.type === "presupuesto" ? "default" : "secondary"}>
                   {project.type === "presupuesto" ? "Presupuesto" : "Administración"}
                 </Badge>
-              </TableCell>
-              <TableCell>
+              </div>
+              
+              <div>
                 {project.type === "presupuesto" && project.budget 
                   ? `${project.budget.toFixed(2)} €` 
                   : project.type === "administracion" && project.hourlyRate
                   ? `${project.hourlyRate.toFixed(2)} €/h`
                   : "-"}
-              </TableCell>
-              <TableCell>
+              </div>
+              
+              <div>
                 <div className="flex items-center gap-2">
                   <span>{variableTotal.toFixed(2)} €</span>
                   <Button
@@ -147,8 +130,9 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
                     <DollarSign className="w-3 h-3" />
                   </Button>
                 </div>
-              </TableCell>
-              <TableCell>
+              </div>
+              
+              <div>
                 <div className="flex items-center gap-2">
                   <div className="text-xs">
                     <div>{project.workers.length} operarios</div>
@@ -167,8 +151,9 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
                     <Users className="w-3 h-3" />
                   </Button>
                 </div>
-              </TableCell>
-              <TableCell>
+              </div>
+              
+              <div>
                 <Select 
                   value={project.status} 
                   onValueChange={(value: Project['status']) => onStatusChange(project.id, value)}
@@ -199,8 +184,9 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
                     </SelectItem>
                   </SelectContent>
                 </Select>
-              </TableCell>
-              <TableCell>
+              </div>
+              
+              <div>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -217,12 +203,22 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+              </div>
+            </div>
+            
+            {/* Timeline para proyectos de presupuesto - siempre visible */}
+            {project.type === "presupuesto" && (
+              <div className="mt-4">
+                <ProjectTimeline 
+                  projectName={project.name}
+                  currentWeek={getCurrentProjectWeek(project)}
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 };
 
