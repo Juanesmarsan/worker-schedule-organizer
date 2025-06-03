@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, DollarSign } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,17 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
-
-interface Project {
-  id: number;
-  name: string;
-  type: "presupuesto" | "administracion";
-  budget?: number;
-  description: string;
-  status: "activo" | "completado" | "pausado";
-  createdAt: Date;
-}
+import { Project, VariableExpense } from "@/types/project";
 
 const ProjectsManager = () => {
   const [projects, setProjects] = useState<Project[]>([
@@ -31,7 +22,11 @@ const ProjectsManager = () => {
       budget: 15000,
       description: "Renovación completa de la oficina central",
       status: "activo",
-      createdAt: new Date()
+      createdAt: new Date(),
+      variableExpenses: [
+        { id: 1, concept: "Material eléctrico", amount: 450, date: new Date() },
+        { id: 2, concept: "Pintura", amount: 220, date: new Date() }
+      ]
     },
     {
       id: 2,
@@ -39,18 +34,27 @@ const ProjectsManager = () => {
       type: "administracion",
       description: "Mantenimiento mensual de sistemas informáticos",
       status: "activo",
-      createdAt: new Date()
+      createdAt: new Date(),
+      variableExpenses: [
+        { id: 3, concept: "Licencias software", amount: 150, date: new Date() }
+      ]
     }
   ]);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [selectedProjectForExpense, setSelectedProjectForExpense] = useState<Project | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     type: "presupuesto" as "presupuesto" | "administracion",
     budget: "",
     description: "",
     status: "activo" as "activo" | "completado" | "pausado"
+  });
+  const [expenseFormData, setExpenseFormData] = useState({
+    concept: "",
+    amount: ""
   });
 
   const { toast } = useToast();
@@ -111,11 +115,11 @@ const ProjectsManager = () => {
       type: formData.type,
       budget: formData.type === "presupuesto" ? parseFloat(formData.budget) : undefined,
       description: formData.description.trim(),
-      status: formData.status
+      status: formData.status,
+      variableExpenses: editingProject?.variableExpenses || []
     };
 
     if (editingProject) {
-      // Editar proyecto existente
       setProjects(projects.map(project => 
         project.id === editingProject.id 
           ? { ...project, ...projectData }
@@ -126,7 +130,6 @@ const ProjectsManager = () => {
         description: `El proyecto "${projectData.name}" ha sido actualizado`,
       });
     } else {
-      // Crear nuevo proyecto
       const newProject: Project = {
         ...projectData,
         id: Date.now(),
@@ -161,6 +164,74 @@ const ProjectsManager = () => {
     return <Badge variant={variants[status]}>{status}</Badge>;
   };
 
+  const openExpenseDialog = (project: Project) => {
+    setSelectedProjectForExpense(project);
+    setExpenseFormData({ concept: "", amount: "" });
+    setIsExpenseDialogOpen(true);
+  };
+
+  const closeExpenseDialog = () => {
+    setIsExpenseDialogOpen(false);
+    setSelectedProjectForExpense(null);
+    setExpenseFormData({ concept: "", amount: "" });
+  };
+
+  const addVariableExpense = () => {
+    if (!selectedProjectForExpense) return;
+
+    if (!expenseFormData.concept.trim() || !expenseFormData.amount.trim()) {
+      toast({
+        title: "Error",
+        description: "Por favor completa todos los campos",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const amount = parseFloat(expenseFormData.amount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Error",
+        description: "El importe debe ser un número válido mayor que 0",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newExpense: VariableExpense = {
+      id: Date.now(),
+      concept: expenseFormData.concept.trim(),
+      amount: amount,
+      date: new Date()
+    };
+
+    setProjects(projects.map(project =>
+      project.id === selectedProjectForExpense.id
+        ? { ...project, variableExpenses: [...project.variableExpenses, newExpense] }
+        : project
+    ));
+
+    toast({
+      title: "Gasto agregado",
+      description: `Se ha agregado el gasto "${newExpense.concept}" al proyecto "${selectedProjectForExpense.name}"`,
+    });
+
+    closeExpenseDialog();
+  };
+
+  const removeVariableExpense = (projectId: number, expenseId: number) => {
+    setProjects(projects.map(project =>
+      project.id === projectId
+        ? { ...project, variableExpenses: project.variableExpenses.filter(e => e.id !== expenseId) }
+        : project
+    ));
+
+    toast({
+      title: "Gasto eliminado",
+      description: "El gasto variable ha sido eliminado del proyecto",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -168,7 +239,7 @@ const ProjectsManager = () => {
           <div>
             <CardTitle>Gestión de Proyectos</CardTitle>
             <CardDescription>
-              Administra proyectos por presupuesto y por administración
+              Administra proyectos por presupuesto y por administración, incluyendo gastos variables
             </CardDescription>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -262,49 +333,136 @@ const ProjectsManager = () => {
                 <TableHead>Nombre</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Presupuesto</TableHead>
+                <TableHead>Gastos Variables</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead>Descripción</TableHead>
-                <TableHead className="w-[120px]">Acciones</TableHead>
+                <TableHead className="w-[150px]">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {projects.map((project) => (
-                <TableRow key={project.id}>
-                  <TableCell className="font-medium">{project.name}</TableCell>
-                  <TableCell>
-                    <Badge variant={project.type === "presupuesto" ? "default" : "secondary"}>
-                      {project.type === "presupuesto" ? "Presupuesto" : "Administración"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {project.budget ? `${project.budget.toFixed(2)} €` : "-"}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(project.status)}</TableCell>
-                  <TableCell className="max-w-xs truncate">{project.description}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openDialog(project)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => deleteProject(project.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {projects.map((project) => {
+                const variableTotal = project.variableExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+                return (
+                  <TableRow key={project.id}>
+                    <TableCell>
+                      <Collapsible>
+                        <CollapsibleTrigger className="font-medium hover:underline">
+                          {project.name}
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="mt-2">
+                          <div className="text-sm text-muted-foreground">
+                            {project.description}
+                          </div>
+                          {project.variableExpenses.length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              <div className="text-xs font-medium">Gastos Variables:</div>
+                              {project.variableExpenses.map((expense) => (
+                                <div key={expense.id} className="flex justify-between text-xs bg-gray-50 p-1 rounded">
+                                  <span>{expense.concept}</span>
+                                  <div className="flex gap-2 items-center">
+                                    <span>{expense.amount.toFixed(2)} €</span>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      className="h-4 w-4 p-0"
+                                      onClick={() => removeVariableExpense(project.id, expense.id)}
+                                    >
+                                      <Trash2 className="w-2 h-2" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={project.type === "presupuesto" ? "default" : "secondary"}>
+                        {project.type === "presupuesto" ? "Presupuesto" : "Administración"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {project.budget ? `${project.budget.toFixed(2)} €` : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span>{variableTotal.toFixed(2)} €</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openExpenseDialog(project)}
+                        >
+                          <DollarSign className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(project.status)}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openDialog(project)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => deleteProject(project.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      {/* Dialog para agregar gastos variables */}
+      <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Agregar Gasto Variable</DialogTitle>
+            <DialogDescription>
+              Agregar un nuevo gasto variable al proyecto "{selectedProjectForExpense?.name}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="expense-concept">Concepto</Label>
+              <Input
+                id="expense-concept"
+                placeholder="Ej: Material, mano de obra..."
+                value={expenseFormData.concept}
+                onChange={(e) => setExpenseFormData({...expenseFormData, concept: e.target.value})}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="expense-amount">Importe (€)</Label>
+              <Input
+                id="expense-amount"
+                type="number"
+                placeholder="0.00"
+                value={expenseFormData.amount}
+                onChange={(e) => setExpenseFormData({...expenseFormData, amount: e.target.value})}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeExpenseDialog}>
+              Cancelar
+            </Button>
+            <Button onClick={addVariableExpense}>
+              Agregar Gasto
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Resumen de proyectos */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -344,16 +502,15 @@ const ProjectsManager = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Presupuesto Total</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Gastos Variables</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {projects
-                .filter(p => p.type === "presupuesto" && p.budget)
-                .reduce((sum, p) => sum + (p.budget || 0), 0)
+                .reduce((sum, p) => sum + p.variableExpenses.reduce((expSum, exp) => expSum + exp.amount, 0), 0)
                 .toFixed(2)} €
             </div>
-            <p className="text-xs text-muted-foreground">Suma de presupuestos</p>
+            <p className="text-xs text-muted-foreground">Suma de gastos variables</p>
           </CardContent>
         </Card>
       </div>
