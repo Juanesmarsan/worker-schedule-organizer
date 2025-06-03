@@ -17,9 +17,9 @@ export const DayCell = ({ date, employee, workHours, onHoursChange }: DayCellPro
 
   const isHolidayDate = isHoliday(date);
   const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-  const isWorkDay = !isHolidayOrSunday(date) && !isWeekend;
+  const isSunday = date.getDay() === 0;
 
-  console.log(`Fecha: ${date.toDateString()}, Es festivo: ${isHolidayDate}, Es fin de semana: ${isWeekend}, Es día laboral: ${isWorkDay}`);
+  console.log(`Fecha: ${date.toDateString()}, Es festivo: ${isHolidayDate}, Es domingo: ${isSunday}, Es fin de semana: ${isWeekend}`);
 
   const handleSave = () => {
     const hours = parseFloat(tempHours) || 0;
@@ -32,20 +32,55 @@ export const DayCell = ({ date, employee, workHours, onHoursChange }: DayCellPro
     setIsEditing(false);
   };
 
-  // Si es un día festivo, mostrarlo en rojo suave
+  // Si es un día festivo, mostrarlo en rojo suave con 0 horas
   if (isHolidayDate) {
     return (
-      <div className="w-full h-24 bg-red-100 border border-red-300 rounded p-2 flex flex-col items-center justify-center">
-        <span className="text-red-800 text-xs font-bold mb-1">FESTIVO</span>
-        <span className="text-red-700 text-sm font-semibold">
+      <div className="w-full h-24 bg-red-100 border border-red-300 rounded p-1">
+        <div className="text-xs text-red-600 mb-1">
           {date.toLocaleDateString('es-ES', { day: 'numeric' })}
-        </span>
+        </div>
+        <div className="flex h-16">
+          {/* Lado izquierdo - 0 para festivos */}
+          <div className="flex-1 bg-red-50 border-r border-red-200 flex items-center justify-center">
+            <span className="text-red-700 font-bold text-lg">0</span>
+          </div>
+          
+          {/* Lado derecho - También 0 para festivos */}
+          <div className="flex-1 bg-red-50 flex items-center justify-center">
+            <span className="text-red-700 font-bold text-sm">0h</span>
+          </div>
+        </div>
+        <div className="text-center">
+          <span className="text-red-800 text-xs font-bold">FESTIVO</span>
+        </div>
       </div>
     );
   }
 
-  // Si es fin de semana (pero no festivo)
-  if (!isWorkDay) {
+  // Si es domingo (pero no festivo)
+  if (isSunday) {
+    return (
+      <div className="w-full h-24 bg-gray-100 border border-gray-200 rounded p-1">
+        <div className="text-xs text-gray-500 mb-1">
+          {date.toLocaleDateString('es-ES', { day: 'numeric' })}
+        </div>
+        <div className="flex h-16">
+          {/* Lado izquierdo - 0 para domingos */}
+          <div className="flex-1 bg-gray-50 border-r border-gray-200 flex items-center justify-center">
+            <span className="text-gray-600 font-bold text-lg">0</span>
+          </div>
+          
+          {/* Lado derecho - También 0 para domingos */}
+          <div className="flex-1 bg-gray-50 flex items-center justify-center">
+            <span className="text-gray-600 font-bold text-sm">0h</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Si es sábado
+  if (isWeekend) {
     return (
       <div className="w-full h-24 bg-gray-100 border border-gray-200 rounded p-1 flex items-center justify-center">
         <span className="text-gray-500 text-sm">
