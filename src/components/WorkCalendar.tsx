@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,18 +8,6 @@ import { HolidaysList } from "./calendar/HolidaysList";
 import { getAllHolidays, isHoliday } from "@/utils/holidayUtils";
 import { useToast } from "@/hooks/use-toast";
 import { MonthlyStats as MonthlyStatsType, Absence } from "@/types/calendar";
-
-// Tipo para las ausencias
-interface Absence {
-  id: number;
-  employeeName: string;
-  type: 'vacation' | 'sick' | 'personal' | 'other';
-  startDate: string;
-  endDate: string;
-  days: number;
-  reason: string;
-  status: 'pending' | 'approved' | 'rejected';
-}
 
 interface WorkCalendarProps {
   absences?: Absence[];
@@ -96,7 +85,7 @@ const WorkCalendar = ({ absences = [], onAbsenceAdded, onAbsenceStatusChange }: 
       const dayOfWeek = date.getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
       const isHolidayDate = isHoliday(date);
-      const isVacation = isVacationDay(date, selectedEmployee);
+      const absenceType = getAbsenceType(date, selectedEmployee);
       
       // Solo contar días laborables (lunes a viernes, no festivos)
       if (!isWeekend && !isHolidayDate) {
