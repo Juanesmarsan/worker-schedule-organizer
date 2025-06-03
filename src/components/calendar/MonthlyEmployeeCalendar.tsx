@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,13 +9,15 @@ interface MonthlyEmployeeCalendarProps {
   workHours: Record<string, number>;
   onHoursChange: (date: Date, hours: number) => void;
   onDateChange?: (date: Date) => void;
+  isVacationDay?: (date: Date) => boolean;
 }
 
 export const MonthlyEmployeeCalendar = ({ 
   employee, 
   workHours, 
   onHoursChange,
-  onDateChange
+  onDateChange,
+  isVacationDay
 }: MonthlyEmployeeCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -68,6 +69,7 @@ export const MonthlyEmployeeCalendar = ({
       const date = new Date(year, month, day);
       const dayKey = getDayKey(date);
       const hours = workHours[dayKey];
+      const isVacation = isVacationDay ? isVacationDay(date) : false;
 
       days.push(
         <DayCell
@@ -76,6 +78,7 @@ export const MonthlyEmployeeCalendar = ({
           employee={employee}
           workHours={hours}
           onHoursChange={onHoursChange}
+          isVacationDay={isVacation}
         />
       );
     }
@@ -118,6 +121,10 @@ export const MonthlyEmployeeCalendar = ({
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-red-100 border border-red-200 rounded"></div>
             <span>Días festivos (España y Valencia)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-green-100 border border-green-200 rounded"></div>
+            <span>Días de vacaciones</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-blue-50 border border-blue-200 rounded"></div>

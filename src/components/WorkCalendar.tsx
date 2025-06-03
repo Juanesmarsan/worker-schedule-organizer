@@ -9,10 +9,25 @@ import { getAllHolidays, isHoliday } from "@/utils/holidayUtils";
 import { useToast } from "@/hooks/use-toast";
 import { MonthlyStats as MonthlyStatsType } from "@/types/calendar";
 
+// Tipo para las ausencias
+interface Absence {
+  id: number;
+  employeeName: string;
+  type: 'vacation' | 'sick' | 'personal' | 'other';
+  startDate: string;
+  endDate: string;
+  days: number;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
 const WorkCalendar = () => {
   const { toast } = useToast();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("Juan Pérez");
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Estado para las ausencias (compartido entre componentes)
+  const [absences, setAbsences] = useState<Absence[]>([]);
   
   // Almacenar las horas trabajadas por empleado y fecha
   const [employeeWorkHours, setEmployeeWorkHours] = useState<Record<string, Record<string, number>>>({
@@ -27,6 +42,18 @@ const WorkCalendar = () => {
   // Obtener festivos del año actual
   const currentYear = currentDate.getFullYear();
   const currentYearHolidays = getAllHolidays(currentYear);
+
+  // Función para verificar si una fecha es día de vacaciones aprobadas
+  const isVacationDay = (date: Date, employee: string): boolean => {
+    const dateStr = date.toISOString().split('T')[0];
+    return absences.some(absence => 
+      absence.employeeName === employee &&
+      absence.type === 'vacation' &&
+      absence.status === 'approved' &&
+      dateStr >= absence.startDate &&
+      dateStr <= absence.endDate
+    );
+  };
 
   const handleHoursChange = (date: Date, hours: number) => {
     const dateKey = date.toISOString().split('T')[0];
@@ -47,6 +74,60 @@ const WorkCalendar = () => {
 
   const handleDateChange = (newDate: Date) => {
     setCurrentDate(newDate);
+  };
+
+  // Función para manejar nuevas ausencias desde AbsenceTracker
+  const handleAbsenceAdded = (newAbsence: Absence) => {
+    setAbsences(prev => [...prev, newAbsence]);
+    
+    // Si es una ausencia de vacaciones aprobada, agregar automáticamente 8 horas por día
+    if (newAbsence.type === 'vacation' && newAbsence.status === 'approved') {
+      const startDate = new Date(newAbsence.startDate);
+      const endDate = new Date(newAbsence.endDate);
+      
+      const updatedHours = { ...employeeWorkHours };
+      if (!updatedHours[newAbsence.employeeName]) {
+        updatedHours[newAbsence.employeeName] = {};
+      }
+      
+      // Iterar por cada día de vacaciones y poner 8 horas
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        const dateKey = d.toISOString().split('T')[0];
+        updatedHours[newAbsence.employeeName][dateKey] = 8;
+      }
+      
+      setEmployeeWorkHours(updatedHours);
+    }
+  };
+
+  // Función para manejar cambios de estado de ausencias
+  const handleAbsenceStatusChange = (id: number, status: 'approved' | 'rejected') => {
+    setAbsences(prev => prev.map(absence => {
+      if (absence.id === id) {
+        const updatedAbsence = { ...absence, status };
+        
+        // Si se aprueba una ausencia de vacaciones, agregar 8 horas automáticamente
+        if (status === 'approved' && absence.type === 'vacation') {
+          const startDate = new Date(absence.startDate);
+          const endDate = new Date(absence.endDate);
+          
+          const updatedHours = { ...employeeWorkHours };
+          if (!updatedHours[absence.employeeName]) {
+            updatedHours[absence.employeeName] = {};
+          }
+          
+          for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            const dateKey = d.toISOString().split('T')[0];
+            updatedHours[absence.employeeName][dateKey] = 8;
+          }
+          
+          setEmployeeWorkHours(updatedHours);
+        }
+        
+        return updatedAbsence;
+      }
+      return absence;
+    }));
   };
 
   const currentEmployeeHours = employeeWorkHours[selectedEmployee] || {};
@@ -124,6 +205,7 @@ const WorkCalendar = () => {
             workHours={currentEmployeeHours}
             onHoursChange={handleHoursChange}
             onDateChange={handleDateChange}
+            isVacationDay={(date) => isVacationDay(date, selectedEmployee)}
           />
         </div>
 
