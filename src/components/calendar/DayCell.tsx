@@ -19,6 +19,8 @@ export const DayCell = ({ date, employee, workHours, onHoursChange }: DayCellPro
   const isWeekend = date.getDay() === 0 || date.getDay() === 6;
   const isWorkDay = !isHolidayOrSunday(date) && !isWeekend;
 
+  console.log(`Fecha: ${date.toDateString()}, Es festivo: ${isHolidayDate}, Es fin de semana: ${isWeekend}, Es día laboral: ${isWorkDay}`);
+
   const handleSave = () => {
     const hours = parseFloat(tempHours) || 0;
     onHoursChange(date, hours);
@@ -30,17 +32,19 @@ export const DayCell = ({ date, employee, workHours, onHoursChange }: DayCellPro
     setIsEditing(false);
   };
 
+  // Si es un día festivo, mostrarlo en rojo suave
   if (isHolidayDate) {
     return (
-      <div className="w-full h-24 bg-red-50 border border-red-200 rounded p-2 flex flex-col items-center justify-center">
-        <span className="text-red-700 text-xs font-medium mb-1">FESTIVO</span>
-        <span className="text-red-600 text-sm font-semibold">
+      <div className="w-full h-24 bg-red-100 border border-red-300 rounded p-2 flex flex-col items-center justify-center">
+        <span className="text-red-800 text-xs font-bold mb-1">FESTIVO</span>
+        <span className="text-red-700 text-sm font-semibold">
           {date.toLocaleDateString('es-ES', { day: 'numeric' })}
         </span>
       </div>
     );
   }
 
+  // Si es fin de semana (pero no festivo)
   if (!isWorkDay) {
     return (
       <div className="w-full h-24 bg-gray-100 border border-gray-200 rounded p-1 flex items-center justify-center">
@@ -51,6 +55,7 @@ export const DayCell = ({ date, employee, workHours, onHoursChange }: DayCellPro
     );
   }
 
+  // Día laboral normal
   return (
     <div className="w-full h-24 bg-white border border-gray-200 rounded p-1">
       <div className="text-xs text-gray-500 mb-1">
