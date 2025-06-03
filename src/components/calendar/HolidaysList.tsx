@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { spainNationalHolidays2024, valenciaHolidays2024 } from "@/utils/holidayUtils";
+import { getSpainNationalHolidays, getValenciaHolidays } from "@/utils/holidayUtils";
 
 interface HolidaysListProps {
   holidays: Date[];
@@ -9,14 +9,18 @@ interface HolidaysListProps {
 
 export const HolidaysList = ({ holidays }: HolidaysListProps) => {
   const today = new Date();
+  const currentYear = today.getFullYear();
+  const nationalHolidays = getSpainNationalHolidays(currentYear);
+  const valenciaHolidays = getValenciaHolidays(currentYear);
+  
   const upcomingHolidays = holidays
     .filter(holiday => holiday >= today)
     .slice(0, 5)
     .map(holiday => {
-      const isNational = spainNationalHolidays2024.some(nh => 
+      const isNational = nationalHolidays.some(nh => 
         nh.toDateString() === holiday.toDateString()
       );
-      const isValencia = valenciaHolidays2024.some(vh => 
+      const isValencia = valenciaHolidays.some(vh => 
         vh.toDateString() === holiday.toDateString()
       );
       

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MonthlyEmployeeCalendar } from "./calendar/MonthlyEmployeeCalendar";
 import { HolidaysList } from "./calendar/HolidaysList";
-import { allHolidays2024 } from "@/utils/holidayUtils";
+import { getAllHolidays } from "@/utils/holidayUtils";
 import { useToast } from "@/hooks/use-toast";
 
 const WorkCalendar = () => {
@@ -20,6 +20,10 @@ const WorkCalendar = () => {
   });
 
   const employees = ["Juan Pérez", "María García", "Carlos López", "Ana Martín"];
+  
+  // Obtener festivos del año actual
+  const currentYear = new Date().getFullYear();
+  const currentYearHolidays = getAllHolidays(currentYear);
 
   const handleHoursChange = (date: Date, hours: number) => {
     const dateKey = date.toISOString().split('T')[0];
@@ -99,7 +103,7 @@ const WorkCalendar = () => {
             </CardContent>
           </Card>
           
-          <HolidaysList holidays={allHolidays2024} />
+          <HolidaysList holidays={currentYearHolidays} />
         </div>
       </div>
     </div>

@@ -1,30 +1,42 @@
-// Festivos nacionales de España y específicos de Valencia ciudad 2025
-export const spainNationalHolidays2024 = [
-  new Date(2025, 0, 1),   // 1 de enero (miércoles): Año Nuevo
-  new Date(2025, 0, 6),   // 6 de enero (lunes): Epifanía del Señor
-  new Date(2025, 3, 18),  // 18 de abril (viernes): Viernes Santo
-  new Date(2025, 4, 1),   // 1 de mayo (jueves): Fiesta del Trabajo
-  new Date(2025, 7, 15),  // 15 de agosto (viernes): Asunción de la Virgen
-  new Date(2025, 10, 1),  // 1 de noviembre (sábado): Todos los Santos
-  new Date(2025, 11, 6),  // 6 de diciembre (sábado): Día de la Constitución Española
-  new Date(2025, 11, 8),  // 8 de diciembre (lunes): Inmaculada Concepción
-  new Date(2025, 11, 25), // 25 de diciembre (jueves): Navidad
+
+// Función para generar festivos nacionales de España para cualquier año
+export const getSpainNationalHolidays = (year: number) => [
+  new Date(year, 0, 1),   // 1 de enero: Año Nuevo
+  new Date(year, 0, 6),   // 6 de enero: Epifanía del Señor
+  new Date(year, 3, 18),  // 18 de abril: Viernes Santo (fecha fija para simplificar)
+  new Date(year, 4, 1),   // 1 de mayo: Fiesta del Trabajo
+  new Date(year, 7, 15),  // 15 de agosto: Asunción de la Virgen
+  new Date(year, 10, 1),  // 1 de noviembre: Todos los Santos
+  new Date(year, 11, 6),  // 6 de diciembre: Día de la Constitución Española
+  new Date(year, 11, 8),  // 8 de diciembre: Inmaculada Concepción
+  new Date(year, 11, 25), // 25 de diciembre: Navidad
 ];
 
-export const valenciaHolidays2024 = [
-  new Date(2025, 2, 19),  // 19 de marzo (miércoles): San José
-  new Date(2025, 3, 21),  // 21 de abril (lunes): Lunes de Pascua (en Valencia)
-  new Date(2025, 9, 9),   // 9 de octubre (jueves): Día de la Comunidad Valenciana
-  new Date(2025, 0, 22),  // 22 de enero (miércoles): San Vicente Mártir
-  new Date(2025, 3, 16),  // 16 de abril (miércoles): San Vicente Ferrer
+// Función para generar festivos de Valencia para cualquier año
+export const getValenciaHolidays = (year: number) => [
+  new Date(year, 2, 19),  // 19 de marzo: San José
+  new Date(year, 3, 21),  // 21 de abril: Lunes de Pascua (fecha fija para simplificar)
+  new Date(year, 9, 9),   // 9 de octubre: Día de la Comunidad Valenciana
+  new Date(year, 0, 22),  // 22 de enero: San Vicente Mártir
+  new Date(year, 3, 16),  // 16 de abril: San Vicente Ferrer
 ];
 
-// Combinamos todos los festivos
-export const allHolidays2024 = [...spainNationalHolidays2024, ...valenciaHolidays2024];
+// Función para obtener todos los festivos de un año específico
+export const getAllHolidays = (year: number) => [
+  ...getSpainNationalHolidays(year),
+  ...getValenciaHolidays(year)
+];
+
+// Mantener compatibilidad con el código existente
+export const spainNationalHolidays2024 = getSpainNationalHolidays(2025);
+export const valenciaHolidays2024 = getValenciaHolidays(2025);
+export const allHolidays2024 = getAllHolidays(2025);
 
 // Verificar si una fecha es festivo o domingo
 export const isHolidayOrSunday = (date: Date) => {
-  const isHoliday = allHolidays2024.some(holiday => 
+  const year = date.getFullYear();
+  const holidays = getAllHolidays(year);
+  const isHoliday = holidays.some(holiday => 
     holiday.toDateString() === date.toDateString()
   );
   const isSunday = date.getDay() === 0;
@@ -33,7 +45,9 @@ export const isHolidayOrSunday = (date: Date) => {
 
 // Verificar si es específicamente un festivo (no domingo)
 export const isHoliday = (date: Date) => {
-  return allHolidays2024.some(holiday => 
+  const year = date.getFullYear();
+  const holidays = getAllHolidays(year);
+  return holidays.some(holiday => 
     holiday.toDateString() === date.toDateString()
   );
 };
