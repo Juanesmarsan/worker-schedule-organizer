@@ -1,4 +1,3 @@
-
 import { Edit, Trash2, DollarSign, Users } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -16,9 +15,21 @@ interface ProjectsListProps {
   onRemoveExpense: (projectId: number, expenseId: number) => void;
   onStatusChange: (projectId: number, status: Project['status']) => void;
   onManageWorkers: (project: Project) => void;
+  onUpdateTimelineStep: (projectId: number, step: TimelineStep) => void;
+  onAddTimelineStep: (projectId: number) => void;
 }
 
-const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpense, onStatusChange, onManageWorkers }: ProjectsListProps) => {
+const ProjectsList = ({ 
+  projects, 
+  onEdit, 
+  onDelete, 
+  onAddExpense, 
+  onRemoveExpense, 
+  onStatusChange, 
+  onManageWorkers,
+  onUpdateTimelineStep,
+  onAddTimelineStep
+}: ProjectsListProps) => {
   const getStatusBadge = (status: Project['status']) => {
     const variants = {
       activo: "default", // azul
@@ -276,8 +287,8 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
                 <ProjectTimeline 
                   projectName={project.name}
                   timelineSteps={timelineSteps}
-                  onUpdateStep={(step) => handleUpdateTimelineStep(project.id, step)}
-                  onAddStep={() => handleAddTimelineStep(project.id)}
+                  onUpdateStep={(step) => onUpdateTimelineStep(project.id, step)}
+                  onAddStep={() => onAddTimelineStep(project.id)}
                 />
               </div>
             )}

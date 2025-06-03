@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Project, VariableExpense } from "@/types/project";
+import { Project, VariableExpense, TimelineStep } from "@/types/project";
 import { Worker } from "@/types/worker";
 import ProjectForm from "@/components/projects/ProjectForm";
 import ProjectsList from "@/components/projects/ProjectsList";
@@ -155,6 +155,47 @@ const ProjectsManager = () => {
     ));
   };
 
+  const handleUpdateTimelineStep = (projectId: number, step: TimelineStep) => {
+    setProjects(projects.map(project => {
+      if (project.id === projectId) {
+        const updatedSteps = project.timelineSteps ? 
+          project.timelineSteps.map(s => s.id === step.id ? step : s) :
+          [step];
+        return { ...project, timelineSteps: updatedSteps };
+      }
+      return project;
+    }));
+
+    toast({
+      title: "Paso actualizado",
+      description: "El paso del timeline ha sido actualizado correctamente",
+    });
+  };
+
+  const handleAddTimelineStep = (projectId: number) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    const currentSteps = project.timelineSteps || [];
+    const newStep: TimelineStep = {
+      id: Date.now(),
+      title: `PASO ${currentSteps.length + 1}:`,
+      concept: "Nuevo Paso",
+      status: 'pending'
+    };
+
+    setProjects(projects.map(p => 
+      p.id === projectId 
+        ? { ...p, timelineSteps: [...currentSteps, newStep] }
+        : p
+    ));
+
+    toast({
+      title: "Paso añadido",
+      description: "Se ha añadido un nuevo paso al timeline",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -179,6 +220,8 @@ const ProjectsManager = () => {
             onRemoveExpense={removeVariableExpense}
             onStatusChange={handleStatusChange}
             onManageWorkers={handleManageWorkers}
+            onUpdateTimelineStep={handleUpdateTimelineStep}
+            onAddTimelineStep={handleAddTimelineStep}
           />
         </CardContent>
       </Card>
