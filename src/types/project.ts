@@ -27,6 +27,7 @@ export interface Project {
   budget?: number;
   hourlyRate?: number;
   description: string;
+  city?: string;
   status: "activo" | "completado" | "pausado";
   createdAt: Date;
   variableExpenses: VariableExpense[];

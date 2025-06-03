@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +16,39 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
   const [monthlyProjectData, setMonthlyProjectData] = useState<any[]>([]);
   const [projectStatusData, setProjectStatusData] = useState<any[]>([]);
   const [cityData, setCityData] = useState<any[]>([]);
+
+  const totalRevenue = projects.reduce((sum, project) => {
+    return sum + (project.budget || (project.hourlyRate || 0) * 160);
+  }, 0);
+
+  const totalExpenses = projects.reduce((sum, project) => {
+    return sum + (project.variableExpenses?.reduce((expSum, exp) => expSum + exp.amount, 0) || 0);
+  }, 0);
+
+  const totalProfit = totalRevenue - totalExpenses;
+  const profitMargin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100) : 0;
+
+  const pendingAbsences = absences.filter(a => a.status === 'pending').length;
+  const totalEmployees = [...new Set(absences.map(a => a.employeeName))].length || 12;
+
+  const chartConfig = {
+    revenue: {
+      label: "Ingresos",
+      color: "#3b82f6",
+    },
+    expenses: {
+      label: "Gastos",
+      color: "#ef4444",
+    },
+    profit: {
+      label: "Beneficio",
+      color: "#22c55e",
+    },
+    projects: {
+      label: "Proyectos",
+      color: "#22c55e",
+    },
+  };
 
   useEffect(() => {
     // Calcular datos mensuales de proyectos
@@ -64,35 +96,6 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
 
     setCityData(Array.from(citiesMap.values()));
   }, [projects]);
-
-  const totalRevenue = projects.reduce((sum, project) => {
-    return sum + (project.budget || (project.hourlyRate || 0) * 160);
-  }, 0);
-
-  const totalExpenses = projects.reduce((sum, project) => {
-    return sum + (project.variableExpenses?.reduce((expSum, exp) => expSum + exp.amount, 0) || 0);
-  }, 0);
-
-  const totalProfit = totalRevenue - totalExpenses;
-  const profitMargin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100) : 0;
-
-  const pendingAbsences = absences.filter(a => a.status === 'pending').length;
-  const totalEmployees = [...new Set(absences.map(a => a.employeeName))].length || 12;
-
-  const chartConfig = {
-    revenue: {
-      label: "Ingresos",
-      color: "#3b82f6",
-    },
-    expenses: {
-      label: "Gastos",
-      color: "#ef4444",
-    },
-    profit: {
-      label: "Beneficio",
-      color: "#22c55e",
-    },
-  };
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -171,31 +174,29 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig}>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={monthlyProjectData}>
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Area 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stackId="1"
-                    stroke="#3b82f6" 
-                    fill="#3b82f6" 
-                    fillOpacity={0.3}
-                    name="Ingresos (€)"
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="projects" 
-                    stackId="2"
-                    stroke="#22c55e" 
-                    fill="#22c55e" 
-                    fillOpacity={0.3}
-                    name="Proyectos"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              <AreaChart data={monthlyProjectData}>
+                <XAxis dataKey="month" />
+                <YAxis />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Area 
+                  type="monotone" 
+                  dataKey="revenue" 
+                  stackId="1"
+                  stroke="#3b82f6" 
+                  fill="#3b82f6" 
+                  fillOpacity={0.3}
+                  name="Ingresos (€)"
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="projects" 
+                  stackId="2"
+                  stroke="#22c55e" 
+                  fill="#22c55e" 
+                  fillOpacity={0.3}
+                  name="Proyectos"
+                />
+              </AreaChart>
             </ChartContainer>
           </CardContent>
         </Card>
@@ -206,7 +207,7 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
             <CardDescription>Distribución actual</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer config={chartConfig}>
               <PieChart>
                 <Pie
                   data={projectStatusData}
@@ -222,7 +223,7 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
                 </Pie>
                 <ChartTooltip content={<ChartTooltipContent />} />
               </PieChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
