@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
@@ -26,12 +25,14 @@ const localizer = dateFnsLocalizer({
   },
 });
 
+type EventType = 'vacation' | 'absence' | 'meeting' | 'deadline' | 'work_hours' | 'note';
+
 interface CalendarEvent {
   id: number;
   title: string;
   start: Date;
   end: Date;
-  type: 'vacation' | 'absence' | 'meeting' | 'deadline' | 'work_hours' | 'note';
+  type: EventType;
   employee: string;
   hours?: number;
   notes?: string;
@@ -147,7 +148,7 @@ const WorkCalendar = () => {
   const todaysEvents = getEventsForDate(new Date());
   const selectedDateEvents = getEventsForDate(selectedDate);
 
-  const getEventTypeIcon = (type: string) => {
+  const getEventTypeIcon = (type: EventType) => {
     switch (type) {
       case 'vacation':
         return <CalendarDays className="w-4 h-4" />;
@@ -166,7 +167,7 @@ const WorkCalendar = () => {
     }
   };
 
-  const getEventTypeBadge = (type: string) => {
+  const getEventTypeBadge = (type: EventType) => {
     switch (type) {
       case 'vacation':
         return <Badge className="bg-green-100 text-green-800">Vacaciones</Badge>;
@@ -216,21 +217,16 @@ const WorkCalendar = () => {
       : new Date(`${formData.startDate}T${formData.endTime}`);
 
     let title = "";
-    switch (formData.type) {
-      case 'work_hours':
-        title = `${formData.employee} - ${formData.hours}h`;
-        break;
-      case 'vacation':
-        title = `${formData.employee} - Vacaciones`;
-        break;
-      case 'absence':
-        title = `${formData.employee} - Ausencia`;
-        break;
-      case 'note':
-        title = `${formData.employee} - ${formData.title}`;
-        break;
-      default:
-        title = `${formData.employee} - ${formData.title}`;
+    if (formData.type === 'work_hours') {
+      title = `${formData.employee} - ${formData.hours}h`;
+    } else if (formData.type === 'vacation') {
+      title = `${formData.employee} - Vacaciones`;
+    } else if (formData.type === 'absence') {
+      title = `${formData.employee} - Ausencia`;
+    } else if (formData.type === 'note') {
+      title = `${formData.employee} - ${formData.title}`;
+    } else {
+      title = `${formData.employee} - ${formData.title}`;
     }
 
     const newEvent: CalendarEvent = {
