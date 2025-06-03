@@ -1,9 +1,7 @@
-
 import { useState } from "react";
 import { Plus, Edit, Trash2, Calendar } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Project, ProjectWorker } from "@/types/project";
 import { Worker } from "@/types/worker";
 import WorkerForm from "./WorkerForm";
@@ -165,11 +163,6 @@ const WorkersManagement = ({ project, onUpdateProject, availableWorkers }: Worke
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
                     <h4 className="font-medium">{worker.name}</h4>
-                    {project.type === "administracion" && worker.hourlyRate && (
-                      <Badge variant="secondary">
-                        {worker.hourlyRate}€/h
-                      </Badge>
-                    )}
                   </div>
                   <div className="text-sm text-muted-foreground mt-1">
                     Total horas: {getTotalHours(worker)}h
