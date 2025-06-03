@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Lock } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,10 +22,77 @@ const FixedExpenses = () => {
   ]);
   const [newConcept, setNewConcept] = useState("");
   const [newAmount, setNewAmount] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
   const { toast } = useToast();
+
+  // Contraseña para acceder a gastos fijos
+  const FIXED_EXPENSES_PASSWORD = "admin123";
 
   // Simulamos que tenemos 8 operarios activos
   const activeWorkers = 8;
+
+  const handlePasswordSubmit = () => {
+    if (passwordInput === FIXED_EXPENSES_PASSWORD) {
+      setIsAuthenticated(true);
+      setPasswordInput("");
+      toast({
+        title: "Acceso concedido",
+        description: "Has accedido correctamente a la gestión de gastos fijos",
+      });
+    } else {
+      toast({
+        title: "Contraseña incorrecta",
+        description: "La contraseña introducida no es válida",
+        variant: "destructive"
+      });
+      setPasswordInput("");
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    toast({
+      title: "Sesión cerrada",
+      description: "Has cerrado la sesión de gastos fijos",
+    });
+  };
+
+  // Si no está autenticado, mostrar formulario de contraseña
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <Lock className="w-12 h-12 text-gray-400" />
+            </div>
+            <CardTitle>Acceso Restringido</CardTitle>
+            <CardDescription>
+              Introduce la contraseña para acceder a la gestión de gastos fijos
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Introduce la contraseña"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+              />
+            </div>
+            <Button onClick={handlePasswordSubmit} className="w-full">
+              <Lock className="w-4 h-4 mr-2" />
+              Acceder
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const expensePerWorker = totalExpenses / activeWorkers;
@@ -80,10 +147,18 @@ const FixedExpenses = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Gestión de Gastos Fijos</CardTitle>
-          <CardDescription>
-            Administra los gastos fijos de la empresa y calcula la repercusión por operario
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Gestión de Gastos Fijos</CardTitle>
+              <CardDescription>
+                Administra los gastos fijos de la empresa y calcula la repercusión por operario
+              </CardDescription>
+            </div>
+            <Button onClick={handleLogout} variant="outline" size="sm">
+              <Lock className="w-4 h-4 mr-2" />
+              Cerrar Sesión
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Formulario para agregar gastos */}
