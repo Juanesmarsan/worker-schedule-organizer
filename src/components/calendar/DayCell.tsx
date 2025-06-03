@@ -131,7 +131,7 @@ export const DayCell = ({ date, employee, workHours, onHoursChange, absenceType 
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-full text-xs p-1"
+                  className={`h-8 w-full text-xs p-1 ${absenceType === 'work_leave' ? 'text-white hover:bg-red-600' : ''}`}
                   onClick={() => setIsEditing(true)}
                 >
                   {workHours || defaultHours}h
