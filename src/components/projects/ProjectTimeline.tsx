@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,9 +27,9 @@ const ProjectTimeline = ({ projectName, timelineSteps, onUpdateStep, onAddStep }
       case 'in-progress':
         return 'bg-blue-500'; // Azul para en progreso
       case 'pending':
-        return 'bg-gray-300'; // Gris para pendiente
+        return 'bg-red-500'; // Rojo para pendiente
       default:
-        return 'bg-gray-300';
+        return 'bg-red-500';
     }
   };
 

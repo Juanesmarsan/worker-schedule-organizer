@@ -37,7 +37,7 @@ const EditableTimelineStep = ({ step, onUpdate, stepColor = 'bg-blue-500' }: Edi
       case 'in-progress':
         return <Badge className="bg-blue-500 text-white">En Progreso</Badge>;
       case 'pending':
-        return <Badge variant="secondary">Pendiente</Badge>;
+        return <Badge className="bg-red-500 text-white">Pendiente</Badge>;
     }
   };
 
