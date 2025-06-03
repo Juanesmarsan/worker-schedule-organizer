@@ -32,22 +32,46 @@ export const DayCell = ({ date, employee, workHours, onHoursChange }: DayCellPro
     setIsEditing(false);
   };
 
-  // Si es un día festivo, mostrarlo en rojo suave con 0 horas
+  // Si es un día festivo, mostrarlo como los domingos pero editable
   if (isHolidayDate) {
     return (
-      <div className="w-full h-24 bg-red-100 border border-red-300 rounded p-1">
-        <div className="text-xs text-red-600 mb-1">
+      <div className="w-full h-24 bg-gray-100 border border-gray-200 rounded p-1">
+        <div className="text-xs text-gray-500 mb-1">
           {date.toLocaleDateString('es-ES', { day: 'numeric' })}
         </div>
         <div className="flex h-16">
           {/* Lado izquierdo - 0 para festivos */}
-          <div className="flex-1 bg-red-50 border-r border-red-200 flex items-center justify-center">
-            <span className="text-red-700 font-bold text-lg">0</span>
+          <div className="flex-1 bg-gray-50 border-r border-gray-200 flex items-center justify-center">
+            <span className="text-gray-600 font-bold text-lg">0</span>
           </div>
           
-          {/* Lado derecho - También 0 para festivos */}
-          <div className="flex-1 bg-red-50 flex items-center justify-center">
-            <span className="text-red-700 font-bold text-sm">0h</span>
+          {/* Lado derecho - Horas editables para festivos */}
+          <div className="flex-1 flex items-center justify-center p-1">
+            {isEditing ? (
+              <div className="w-full">
+                <Input
+                  type="number"
+                  value={tempHours}
+                  onChange={(e) => setTempHours(e.target.value)}
+                  className="h-8 text-xs text-center"
+                  onBlur={handleSave}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSave();
+                    if (e.key === 'Escape') handleCancel();
+                  }}
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-full text-xs p-1"
+                onClick={() => setIsEditing(true)}
+              >
+                {workHours || '0'}h
+              </Button>
+            )}
           </div>
         </div>
         <div className="text-center">
@@ -70,9 +94,33 @@ export const DayCell = ({ date, employee, workHours, onHoursChange }: DayCellPro
             <span className="text-gray-600 font-bold text-lg">0</span>
           </div>
           
-          {/* Lado derecho - También 0 para domingos */}
-          <div className="flex-1 bg-gray-50 flex items-center justify-center">
-            <span className="text-gray-600 font-bold text-sm">0h</span>
+          {/* Lado derecho - Horas editables para domingos */}
+          <div className="flex-1 flex items-center justify-center p-1">
+            {isEditing ? (
+              <div className="w-full">
+                <Input
+                  type="number"
+                  value={tempHours}
+                  onChange={(e) => setTempHours(e.target.value)}
+                  className="h-8 text-xs text-center"
+                  onBlur={handleSave}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSave();
+                    if (e.key === 'Escape') handleCancel();
+                  }}
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-full text-xs p-1"
+                onClick={() => setIsEditing(true)}
+              >
+                {workHours || '0'}h
+              </Button>
+            )}
           </div>
         </div>
       </div>
