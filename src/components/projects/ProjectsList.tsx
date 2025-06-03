@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Project } from "@/types/project";
+import ProjectTimeline from "./ProjectTimeline";
 
 interface ProjectsListProps {
   projects: Project[];
@@ -47,6 +48,15 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
     return 0;
   };
 
+  // Función para calcular la semana actual del proyecto basada en su fecha de creación
+  const getCurrentProjectWeek = (project: Project) => {
+    const now = new Date();
+    const createdAt = new Date(project.createdAt);
+    const diffTime = Math.abs(now.getTime() - createdAt.getTime());
+    const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
+    return Math.min(diffWeeks, 9); // Máximo 9 semanas
+  };
+
   return (
     <Table>
       <TableHeader>
@@ -76,9 +86,20 @@ const ProjectsList = ({ projects, onEdit, onDelete, onAddExpense, onRemoveExpens
                     {project.name}
                   </CollapsibleTrigger>
                   <CollapsibleContent className="mt-2">
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-muted-foreground mb-4">
                       {project.description}
                     </div>
+                    
+                    {/* Timeline para proyectos de presupuesto */}
+                    {project.type === "presupuesto" && (
+                      <div className="mb-4">
+                        <ProjectTimeline 
+                          projectName={project.name}
+                          currentWeek={getCurrentProjectWeek(project)}
+                        />
+                      </div>
+                    )}
+                    
                     {project.variableExpenses.length > 0 && (
                       <div className="mt-2 space-y-1">
                         <div className="text-xs font-medium">Gastos Variables:</div>
