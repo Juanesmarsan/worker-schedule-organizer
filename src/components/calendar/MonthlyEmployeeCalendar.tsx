@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,17 +9,26 @@ interface MonthlyEmployeeCalendarProps {
   employee: string;
   workHours: Record<string, number>;
   onHoursChange: (date: Date, hours: number) => void;
+  onDateChange?: (date: Date) => void;
 }
 
 export const MonthlyEmployeeCalendar = ({ 
   employee, 
   workHours, 
-  onHoursChange 
+  onHoursChange,
+  onDateChange
 }: MonthlyEmployeeCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
+
+  // Notificar cambios de fecha al componente padre
+  useEffect(() => {
+    if (onDateChange) {
+      onDateChange(currentDate);
+    }
+  }, [currentDate, onDateChange]);
 
   // Obtener el primer día del mes y cuántos días tiene
   const firstDayOfMonth = new Date(year, month, 1);
