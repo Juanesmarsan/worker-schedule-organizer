@@ -5,20 +5,18 @@ import { format, parse, startOfWeek, getDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { CalendarDays, Users, Clock, Briefcase } from "lucide-react";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
-const locales = {
-  es: es,
-};
-
+// Proper localizer configuration
 const localizer = dateFnsLocalizer({
   format,
   parse,
-  startOfWeek,
+  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1 }), // Monday start
   getDay,
-  locales,
+  locales: {
+    'es': es,
+  },
 });
 
 interface CalendarEvent {
@@ -117,7 +115,7 @@ const WorkCalendar = () => {
       case 'deadline':
         return <Clock className="w-4 h-4" />;
       default:
-        return <Calendar className="w-4 h-4" />;
+        return <CalendarDays className="w-4 h-4" />;
     }
   };
 
@@ -134,6 +132,23 @@ const WorkCalendar = () => {
       default:
         return <Badge variant="secondary">Evento</Badge>;
     }
+  };
+
+  // Calendar messages in Spanish
+  const messages = {
+    allDay: 'Todo el día',
+    previous: 'Anterior',
+    next: 'Siguiente',
+    today: 'Hoy',
+    month: 'Mes',
+    week: 'Semana',
+    day: 'Día',
+    agenda: 'Agenda',
+    date: 'Fecha',
+    time: 'Hora',
+    event: 'Evento',
+    noEventsInRange: 'No hay eventos en este rango',
+    showMore: (total: number) => `+ Ver más (${total})`
   };
 
   return (
@@ -163,21 +178,8 @@ const WorkCalendar = () => {
                   eventPropGetter={eventStyleGetter}
                   onSelectSlot={(slotInfo) => setSelectedDate(slotInfo.start)}
                   selectable
+                  messages={messages}
                   culture="es"
-                  messages={{
-                    next: "Siguiente",
-                    previous: "Anterior",
-                    today: "Hoy",
-                    month: "Mes",
-                    week: "Semana",
-                    day: "Día",
-                    agenda: "Agenda",
-                    date: "Fecha",
-                    time: "Hora",
-                    event: "Evento",
-                    noEventsInRange: "No hay eventos en este rango",
-                    showMore: (total) => `+ Ver más (${total})`
-                  }}
                 />
               </div>
             </CardContent>
@@ -190,7 +192,7 @@ const WorkCalendar = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
+                <CalendarDays className="w-5 h-5" />
                 Eventos de Hoy
               </CardTitle>
               <CardDescription>
