@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Users, Building, Clock, Euro, Calendar, AlertTriangle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { TrendingUp, TrendingDown, Users, Building, Clock, Euro, Calendar, AlertTriangle, MapPin } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
 import { Project } from "@/types/project";
 import { Absence } from "@/types/calendar";
+import ProjectMap from "@/components/maps/ProjectMap";
 
 interface DashboardWithDataProps {
   projects: Project[];
@@ -15,7 +17,8 @@ interface DashboardWithDataProps {
 const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
   const [monthlyProjectData, setMonthlyProjectData] = useState<any[]>([]);
   const [projectStatusData, setProjectStatusData] = useState<any[]>([]);
-  const [cityData, setCityData] = useState<any[]>([]);
+  const [workersData, setWorkersData] = useState<any[]>([]);
+  const [mapboxToken, setMapboxToken] = useState<string>("");
 
   const totalRevenue = projects.reduce((sum, project) => {
     return sum + (project.budget || (project.hourlyRate || 0) * 160);
@@ -74,27 +77,42 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
     ];
     setProjectStatusData(statusData);
 
-    // Calcular datos por ciudad basado en proyectos reales
-    const citiesMap = new Map();
-    projects.forEach(project => {
-      const city = project.city || 'Sin especificar';
-      if (citiesMap.has(city)) {
-        const existing = citiesMap.get(city);
-        citiesMap.set(city, {
-          ...existing,
-          projects: existing.projects + 1,
-          revenue: existing.revenue + (project.budget || project.hourlyRate * 160 || 0)
-        });
-      } else {
-        citiesMap.set(city, {
-          city,
-          projects: 1,
-          revenue: project.budget || project.hourlyRate * 160 || 0
-        });
-      }
-    });
-
-    setCityData(Array.from(citiesMap.values()));
+    // Calcular datos de trabajadores
+    const workersAnalysis = [
+      { 
+        name: 'Juan Pérez', 
+        coste: 2000, 
+        beneficio: 2800, 
+        horasTrabajadas: 80,
+        tarifaHora: 25,
+        rentabilidad: 40
+      },
+      { 
+        name: 'María García', 
+        coste: 2400, 
+        beneficio: 3200, 
+        horasTrabajadas: 80,
+        tarifaHora: 30,
+        rentabilidad: 33
+      },
+      { 
+        name: 'Carlos López', 
+        coste: 2240, 
+        beneficio: 2960, 
+        horasTrabajadas: 80,
+        tarifaHora: 28,
+        rentabilidad: 32
+      },
+      { 
+        name: 'Ana Martín', 
+        coste: 2560, 
+        beneficio: 3400, 
+        horasTrabajadas: 80,
+        tarifaHora: 32,
+        rentabilidad: 33
+      },
+    ];
+    setWorkersData(workersAnalysis);
   }, [projects]);
 
   return (
@@ -231,63 +249,31 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Rendimiento por Ciudad</CardTitle>
-            <CardDescription>Proyectos e ingresos por ubicación</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {cityData.map((city, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Building className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{city.city}</p>
-                      <p className="text-sm text-gray-500">{city.projects} proyecto{city.projects !== 1 ? 's' : ''}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-green-600">€{city.revenue.toLocaleString()}</p>
-                    <Badge variant="secondary" className="text-xs">
-                      {totalRevenue > 0 ? ((city.revenue / totalRevenue) * 100).toFixed(1) : 0}%
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-              {cityData.length === 0 && (
-                <p className="text-center text-gray-500 py-4">No hay datos de ciudades disponibles</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Gastos por Proyecto</CardTitle>
-            <CardDescription>Distribución de gastos variables</CardDescription>
+            <CardTitle>Rendimiento por Proyecto</CardTitle>
+            <CardDescription>Ingresos y gastos por proyecto</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {projects.map((project, index) => {
                 const projectExpenses = project.variableExpenses?.reduce((sum, exp) => sum + exp.amount, 0) || 0;
                 const projectRevenue = project.budget || (project.hourlyRate || 0) * 160;
+                const projectProfit = projectRevenue - projectExpenses;
                 return (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                        <Building className="w-4 h-4 text-purple-600" />
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Building className="w-4 h-4 text-blue-600" />
                       </div>
                       <div>
                         <p className="font-medium">{project.name}</p>
-                        <p className="text-sm text-gray-500">{project.type}</p>
+                        <p className="text-sm text-gray-500">{project.type} • {project.city || 'Sin ubicación'}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-red-600">€{projectExpenses.toLocaleString()}</p>
-                      <p className="text-xs text-gray-500">
-                        {projectRevenue > 0 ? ((projectExpenses / projectRevenue) * 100).toFixed(1) : 0}% del ingreso
-                      </p>
+                      <p className="font-bold text-green-600">€{projectProfit.toLocaleString()}</p>
+                      <Badge variant="secondary" className="text-xs">
+                        {projectRevenue > 0 ? ((projectProfit / projectRevenue) * 100).toFixed(1) : 0}% margen
+                      </Badge>
                     </div>
                   </div>
                 );
@@ -296,6 +282,75 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
                 <p className="text-center text-gray-500 py-4">No hay proyectos disponibles</p>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Análisis de Trabajadores</CardTitle>
+            <CardDescription>Coste vs Beneficio por empleado</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig}>
+              <BarChart data={workersData}>
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar 
+                  dataKey="coste" 
+                  fill="#ef4444" 
+                  name="Coste (€)"
+                />
+                <Bar 
+                  dataKey="beneficio" 
+                  fill="#22c55e" 
+                  name="Beneficio (€)"
+                />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <MapPin className="w-5 h-5" />
+              <span>Localización de Proyectos</span>
+            </CardTitle>
+            <CardDescription>
+              Mapa interactivo con la ubicación de todos los proyectos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4">
+              <label htmlFor="mapbox-token" className="block text-sm font-medium text-gray-700 mb-2">
+                Token de Mapbox (obligatorio para mostrar el mapa)
+              </label>
+              <Input
+                id="mapbox-token"
+                type="password"
+                placeholder="Introduce tu token público de Mapbox"
+                value={mapboxToken}
+                onChange={(e) => setMapboxToken(e.target.value)}
+                className="max-w-md"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Obtén tu token en <a href="https://mapbox.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">mapbox.com</a>
+              </p>
+            </div>
+            
+            {mapboxToken ? (
+              <ProjectMap projects={projects} mapboxToken={mapboxToken} />
+            ) : (
+              <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center">
+                <div className="text-center">
+                  <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-500">Introduce tu token de Mapbox para ver el mapa</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
