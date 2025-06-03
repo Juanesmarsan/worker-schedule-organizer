@@ -14,9 +14,10 @@ import { TimelineStep } from "@/types/project";
 interface EditableTimelineStepProps {
   step: TimelineStep;
   onUpdate: (step: TimelineStep) => void;
+  stepColor?: string;
 }
 
-const EditableTimelineStep = ({ step, onUpdate }: EditableTimelineStepProps) => {
+const EditableTimelineStep = ({ step, onUpdate, stepColor = 'bg-blue-500' }: EditableTimelineStepProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedStep, setEditedStep] = useState(step);
 
@@ -33,9 +34,9 @@ const EditableTimelineStep = ({ step, onUpdate }: EditableTimelineStepProps) => 
   const getStatusBadge = (status: TimelineStep['status']) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-green-500 text-white">Completado</Badge>;
+        return <Badge className={`${stepColor} text-white`}>Completado</Badge>;
       case 'in-progress':
-        return <Badge className="bg-blue-500 text-white">En Progreso</Badge>;
+        return <Badge className={`${stepColor.replace('500', '400')} text-white`}>En Progreso</Badge>;
       case 'pending':
         return <Badge variant="secondary">Pendiente</Badge>;
     }
@@ -125,6 +126,7 @@ const EditableTimelineStep = ({ step, onUpdate }: EditableTimelineStepProps) => 
     <div className="border rounded-lg p-4">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${stepColor}`} />
           <h4 className="font-semibold">{step.title}</h4>
           <span className="font-medium text-gray-700">{step.concept}</span>
           {getStatusBadge(step.status)}
