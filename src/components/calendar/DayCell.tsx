@@ -71,12 +71,12 @@ export const DayCell = ({ date, employee, workHours, onHoursChange, absenceType 
         };
       case 'work_leave':
         return {
-          bg: 'bg-amber-50',
-          border: 'border-amber-200',
-          textColor: 'text-amber-600',
-          leftBg: 'bg-amber-100',
-          leftBorder: 'border-amber-200',
-          leftText: 'text-amber-700'
+          bg: 'bg-gray-50',
+          border: 'border-gray-200',
+          textColor: 'text-gray-600',
+          leftBg: 'bg-gray-100',
+          leftBorder: 'border-gray-200',
+          leftText: 'text-gray-700'
         };
       case 'personal':
       case 'other':
