@@ -8,14 +8,16 @@ import { HolidaysList } from "./calendar/HolidaysList";
 import { getAllHolidays, isHoliday } from "@/utils/holidayUtils";
 import { useToast } from "@/hooks/use-toast";
 import { MonthlyStats as MonthlyStatsType, Absence } from "@/types/calendar";
+import { Project } from "@/types/project";
 
 interface WorkCalendarProps {
   absences?: Absence[];
   onAbsenceAdded?: (absence: Absence) => void;
   onAbsenceStatusChange?: (id: number, status: 'approved' | 'rejected') => void;
+  projects?: Project[]; // Añadir proyectos para calcular beneficios
 }
 
-const WorkCalendar = ({ absences = [], onAbsenceAdded, onAbsenceStatusChange }: WorkCalendarProps) => {
+const WorkCalendar = ({ absences = [], onAbsenceAdded, onAbsenceStatusChange, projects = [] }: WorkCalendarProps) => {
   const { toast } = useToast();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("Juan Pérez");
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -46,6 +48,28 @@ const WorkCalendar = ({ absences = [], onAbsenceAdded, onAbsenceStatusChange }: 
     return absence ? absence.type : null;
   };
 
+  // Función para obtener información del proyecto donde trabajó el empleado en una fecha específica
+  const getProjectWorkInfo = (date: Date, employee: string) => {
+    const dateStr = date.toISOString().split('T')[0];
+    
+    for (const project of projects) {
+      if (project.type === "administracion") {
+        const worker = project.workers.find(w => w.name === employee);
+        if (worker) {
+          const workDay = worker.workDays.find(wd => wd.date === dateStr);
+          if (workDay) {
+            return {
+              project,
+              hours: workDay.hours,
+              hourlyRate: project.hourlyRate || worker.hourlyRate || 0
+            };
+          }
+        }
+      }
+    }
+    return null;
+  };
+
   const handleHoursChange = (date: Date, hours: number) => {
     const dateKey = date.toISOString().split('T')[0];
     
@@ -69,8 +93,8 @@ const WorkCalendar = ({ absences = [], onAbsenceAdded, onAbsenceStatusChange }: 
 
   const currentEmployeeHours = employeeWorkHours[selectedEmployee] || {};
 
-  // Calcular estadísticas mensuales
-  const calculateMonthlyStats = (): MonthlyStatsType => {
+  // Calcular estadísticas mensuales incluyendo beneficio bruto
+  const calculateMonthlyStats = (): MonthlyStatsType & { grossProfit: number } => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     
@@ -78,7 +102,8 @@ const WorkCalendar = ({ absences = [], onAbsenceAdded, onAbsenceStatusChange }: 
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     let workDays = 0;
     let totalHours = 0;
-    let laboralHours = 0; // Nueva variable para horas laborales
+    let laboralHours = 0;
+    let grossProfit = 0; // Nueva variable para beneficio bruto
     
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
@@ -101,6 +126,14 @@ const WorkCalendar = ({ absences = [], onAbsenceAdded, onAbsenceStatusChange }: 
       if (!isHolidayDate && dayOfWeek !== 0) {
         laboralHours += hoursWorked;
       }
+
+      // Calcular beneficio bruto solo para días sin ausencias
+      if (!absenceType && !isHolidayDate && hoursWorked > 0) {
+        const projectInfo = getProjectWorkInfo(date, selectedEmployee);
+        if (projectInfo) {
+          grossProfit += projectInfo.hours * projectInfo.hourlyRate;
+        }
+      }
     }
     
     const expectedHours = workDays * 8;
@@ -111,7 +144,8 @@ const WorkCalendar = ({ absences = [], onAbsenceAdded, onAbsenceStatusChange }: 
       expectedHours,
       totalHours,
       overtime,
-      laboralHours // Agregar horas laborales a las estadísticas
+      laboralHours,
+      grossProfit
     };
   };
 
@@ -180,6 +214,12 @@ const WorkCalendar = ({ absences = [], onAbsenceAdded, onAbsenceStatusChange }: 
                   <span>Horas laborales:</span>
                   <span className="font-medium">
                     {monthlyStats.laboralHours}h
+                  </span>
+                </div>
+                <div className="flex justify-between border-t pt-2">
+                  <span className="font-medium text-green-700">Beneficio bruto:</span>
+                  <span className="font-bold text-green-700">
+                    {monthlyStats.grossProfit.toFixed(2)}€
                   </span>
                 </div>
               </div>

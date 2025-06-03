@@ -1,43 +1,28 @@
 
-export type EventType = 'vacation' | 'absence' | 'work_hours' | 'note';
+export interface MonthlyStats {
+  workDays: number;
+  expectedHours: number;
+  totalHours: number;
+  overtime: number;
+  laboralHours: number;
+}
 
-export interface CalendarEvent {
+export interface Absence {
+  id: number;
+  employeeName: string;
+  type: 'vacation' | 'sick' | 'personal' | 'other';
+  startDate: string;
+  endDate: string;
+  status: 'pending' | 'approved' | 'rejected';
+  description?: string;
+}
+
+export interface WorkEvent {
   id: number;
   title: string;
   start: Date;
   end: Date;
-  type: EventType;
-  employee: string;
-  hours?: number;
-  notes?: string;
-}
-
-export interface EventFormData {
-  type: EventType;
-  date: string;
-  hours: number;
-  startTime: string;
-  endTime: string;
-  title: string;
-  notes: string;
-}
-
-export interface MonthlyStats {
-  totalHours: number;
-  expectedHours: number;
-  overtime: number;
-  workDays: number;
-  laboralHours?: number;
-}
-
-// Tipo para las ausencias
-export interface Absence {
-  id: number;
-  employeeName: string;
-  type: 'vacation' | 'sick' | 'personal' | 'other' | 'work_leave';
-  startDate: string;
-  endDate: string;
-  days: number;
-  reason: string;
-  status: 'pending' | 'approved' | 'rejected';
+  type: 'work' | 'meeting' | 'training' | 'other';
+  description?: string;
+  employeeName?: string;
 }
