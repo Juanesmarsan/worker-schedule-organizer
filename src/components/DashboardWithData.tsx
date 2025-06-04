@@ -20,7 +20,6 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
   const [workersData, setWorkersData] = useState<any[]>([]);
   const [absenceData, setAbsenceData] = useState<any[]>([]);
   const [projectTypeData, setProjectTypeData] = useState<any[]>([]);
-  const [mapboxToken, setMapboxToken] = useState<string>("");
 
   const totalRevenue = projects.reduce((sum, project) => {
     return sum + (project.budget || (project.hourlyRate || 0) * 160);
@@ -221,6 +220,70 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
 
     setProjectTypeData(typeComparisonData);
   }, [projects, absences]);
+
+  // Componente de mapa estático simplificado
+  const StaticProjectMap = () => {
+    return (
+      <div className="relative">
+        <div className="h-96 w-full rounded-lg bg-gradient-to-br from-blue-50 to-green-50 border-2 border-dashed border-gray-300 flex flex-col items-center justify-center">
+          <MapPin className="w-16 h-16 text-blue-500 mb-4" />
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">Mapa de Proyectos</h3>
+          <p className="text-gray-500 text-center max-w-md">
+            Ubicaciones de los {projects.length} proyectos distribuidos por España
+          </p>
+          
+          {/* Lista de proyectos con ubicaciones */}
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl">
+            {projects.slice(0, 6).map((project, index) => {
+              const projectRevenue = project.budget || (project.hourlyRate || 0) * 160;
+              const projectExpenses = project.variableExpenses?.reduce((sum, exp) => sum + exp.amount, 0) || 0;
+              const projectProfit = projectRevenue - projectExpenses;
+              
+              return (
+                <div key={project.id} className="bg-white rounded-lg p-3 shadow-sm border flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-3 h-3 rounded-full ${
+                      project.status === 'activo' ? 'bg-blue-500' : 
+                      project.status === 'completado' ? 'bg-green-500' : 'bg-gray-500'
+                    }`}></div>
+                    <div>
+                      <p className="font-medium text-sm">{project.name}</p>
+                      <p className="text-xs text-gray-500">{project.city || 'Sin ubicación'}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-green-600">€{projectProfit.toLocaleString()}</p>
+                    <p className="text-xs text-gray-500">{project.type}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {projects.length > 6 && (
+            <p className="text-sm text-gray-500 mt-3">
+              Y {projects.length - 6} proyectos más...
+            </p>
+          )}
+        </div>
+        
+        <div className="mt-4 flex flex-wrap gap-2">
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+            <span className="text-sm text-gray-600">Proyectos Activos</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+            <span className="text-sm text-gray-600">Proyectos Completados</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-gray-500 rounded-full"></div>
+            <span className="text-sm text-gray-600">Proyectos Pausados</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -562,37 +625,11 @@ const DashboardWithData = ({ projects, absences }: DashboardWithDataProps) => {
               <span>Localización de Proyectos</span>
             </CardTitle>
             <CardDescription>
-              Mapa interactivo con la ubicación de todos los proyectos
+              Vista general de todos los proyectos y su rendimiento por ubicación
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="mb-4">
-              <label htmlFor="mapbox-token" className="block text-sm font-medium text-gray-700 mb-2">
-                Token de Mapbox (obligatorio para mostrar el mapa)
-              </label>
-              <Input
-                id="mapbox-token"
-                type="password"
-                placeholder="Introduce tu token público de Mapbox"
-                value={mapboxToken}
-                onChange={(e) => setMapboxToken(e.target.value)}
-                className="max-w-md"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Obtén tu token en <a href="https://mapbox.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">mapbox.com</a>
-              </p>
-            </div>
-            
-            {mapboxToken ? (
-              <ProjectMap projects={projects} mapboxToken={mapboxToken} />
-            ) : (
-              <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500">Introduce tu token de Mapbox para ver el mapa</p>
-                </div>
-              </div>
-            )}
+            <StaticProjectMap />
           </CardContent>
         </Card>
       </div>
